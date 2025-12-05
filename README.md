@@ -6,7 +6,7 @@
 
 **Learn by doing: content moderation, data pipelines, chatbots, research assistants, interactive playground, and migration guides.**
 
-[![Examples](https://img.shields.io/badge/examples-6-blue.svg)](.)
+[![Examples](https://img.shields.io/badge/examples-7-blue.svg)](.)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 </div>
@@ -119,9 +119,34 @@ Build agents with different personalities (bully, shy kid, mediator, joker, teac
 **Try it:**
 ```bash
 cd 06-playground-simulation
-export OPENAI_API_KEY=sk-...
-uvicorn backend/main:app
+ollama pull gemma:2b-instruct
+uvicorn backend/main:app --port 8888
 # Open frontend/index.html
+```
+
+---
+
+### **7. Innovation Waves** ([07-innovation-waves/](07-innovation-waves/)) 🚀
+**Technology Adoption Simulator - One YAML → 5 Runtimes**
+
+Watch 300-1000 companies compete as technology adoption cascades through business networks.
+
+- ✅ 1000 agents at 60fps (Gemma 2B)
+- ✅ God Mode: Drop patents, apply regulations
+- ✅ Rich-get-richer market dynamics
+- ✅ Fabric policy enforcement (anti-monopoly)
+- ✅ 5-runtime demo matrix (Browser, AWS, LangGraph, MCP, Ollama)
+
+**Perfect for:** Enterprise demos, multi-runtime showcases, policy enforcement demos
+
+**Try it:**
+```bash
+cd 07-innovation-waves
+ollama pull gemma:2b-instruct
+pip install -r backend/requirements.txt
+python backend/main.py
+# Open frontend/index.html (single view)
+# Open frontend/demo-matrix.html (5-runtime matrix)
 ```
 
 ---

@@ -158,6 +158,23 @@
         .run-btn:hover { background: #218838; }
         .run-btn:disabled { background: #6c757d; cursor: not-allowed; }
         
+        .stop-btn {
+            width: 100%;
+            padding: 1.25rem;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.25rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            display: none;
+        }
+        
+        .stop-btn:hover { background: #c82333; }
+        .stop-btn.visible { display: block; }
+        
         /* Conversation */
         .conversation {
             height: 600px;
@@ -256,6 +273,7 @@
                     <h2>📝 Scenario</h2>
                     <textarea id="scenario" rows="4" placeholder="Describe the situation...">A disagreement over who gets to use the playground swing first.</textarea>
                     <button class="run-btn" id="runBtn" onclick="startSimulation()">▶️ Run Simulation</button>
+                    <button class="stop-btn" id="stopBtn" onclick="stopSimulation()">⏹️ Stop</button>
                 </div>
             </div>
             
@@ -278,7 +296,7 @@
         let ws = null;
         
         // Fetch archetypes on load
-        fetch('http://localhost:8000/archetypes')
+        fetch('http://localhost:8888/archetypes')
             .then(r => r.json())
             .then(data => {
                 archetypes = data.archetypes;
@@ -355,18 +373,44 @@
             }).join('');
         }
         
+        function stopSimulation() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+            const runBtn = document.getElementById('runBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            runBtn.disabled = false;
+            runBtn.textContent = '▶️ Run Simulation';
+            stopBtn.classList.remove('visible');
+            
+            const conversation = document.getElementById('conversation');
+            conversation.innerHTML += `
+                <div class="message">
+                    <div class="message-header">
+                        <div class="avatar" style="background: #6c757d;">⏹</div>
+                        <span class="agent-name">System</span>
+                    </div>
+                    <div class="message-content" style="border-left-color: #6c757d;">Simulation stopped by user.</div>
+                </div>
+            `;
+            conversation.scrollTop = conversation.scrollHeight;
+        }
+        
         function startSimulation() {
             const scenario = document.getElementById('scenario').value;
             const conversation = document.getElementById('conversation');
             const runBtn = document.getElementById('runBtn');
+            const stopBtn = document.getElementById('stopBtn');
             
             // Clear conversation
             conversation.innerHTML = '';
             runBtn.disabled = true;
             runBtn.textContent = '⏸️ Running...';
+            stopBtn.classList.add('visible');
             
             // Connect WebSocket
-            ws = new WebSocket('ws://localhost:8000/ws/simulate');
+            ws = new WebSocket('ws://localhost:8888/ws/simulate');
             
             ws.onopen = () => {
                 ws.send(JSON.stringify({
@@ -394,6 +438,7 @@
                 } else if (data.type === 'complete') {
                     runBtn.disabled = false;
                     runBtn.textContent = '▶️ Run Again';
+                    stopBtn.classList.remove('visible');
                     ws.close();
                 }
             };
@@ -401,10 +446,11 @@
             ws.onerror = () => {
                 runBtn.disabled = false;
                 runBtn.textContent = '▶️ Run Simulation';
+                stopBtn.classList.remove('visible');
                 conversation.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-state-icon">⚠️</div>
-                        <p>Could not connect to backend. Make sure the server is running on port 8000.</p>
+                        <p>Could not connect to backend. Make sure the server is running on port 8888.</p>
                     </div>
                 `;
             };

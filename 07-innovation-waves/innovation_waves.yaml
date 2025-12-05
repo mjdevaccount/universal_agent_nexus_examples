@@ -1,0 +1,95 @@
+# Innovation Waves - Technology Adoption Simulator
+# One YAML → 5 Production Runtimes
+name: "innovation_waves"
+version: "1.0.0"
+description: "300-1000 Fabric agents simulating technology adoption across business networks"
+
+roles:
+  - name: "Innovator"
+    base_template: "planning_loop"
+    system_prompt_template: |
+      You are an innovative startup. You prioritize new tech adoption for competitive advantage.
+      Analyze market trends and adopt early. Take calculated risks for market disruption.
+      Your decisions affect market dynamics. Be bold but strategic.
+    default_capabilities: ["analyze_market", "adopt_tech", "compete"]
+  
+  - name: "ConservativeCorp"
+    base_template: "react_loop"
+    system_prompt_template: |
+      You are a large corporation. You prioritize stability over innovation.
+      Only adopt proven technologies with clear ROI. Focus on market share protection.
+      Risk aversion is your strength. Let others prove technology first.
+    default_capabilities: ["analyze_risk", "protect_share", "compete"]
+  
+  - name: "FastFollower"
+    base_template: "react_loop"
+    system_prompt_template: |
+      You are a fast follower company. You watch innovators closely.
+      When new tech proves viable, adopt quickly before conservatives.
+      Balance innovation with proven results. Second-mover advantage.
+    default_capabilities: ["monitor_market", "adopt_tech", "compete"]
+  
+  - name: "Regulator"
+    base_template: "planning_loop"
+    system_prompt_template: |
+      You are a market regulator. Enforce competition policies.
+      Block monopolies. Promote fair innovation diffusion. Protect consumers.
+      Your interventions shape market dynamics for all participants.
+    default_capabilities: ["enforce_policy", "monitor_market", "intervene"]
+
+governance:
+  - name: "anti_monopoly"
+    description: "Prevent any single company from dominating >80% market share"
+    target_pattern: "acquire_market_share"
+    action: "deny"
+    severity: "high"
+    conditions:
+      market_concentration: ">0.8"
+  
+  - name: "innovation_subsidy"
+    description: "Small companies get approval boost for tech adoption"
+    target_pattern: "adopt_new_tech"
+    action: "allow"
+    severity: "low"
+    conditions:
+      company_size: "<1000"
+      innovation_score: ">0.5"
+  
+  - name: "patent_protection"
+    description: "Prevent copying without licensing"
+    target_pattern: "copy_technology"
+    action: "require_approval"
+    severity: "medium"
+    conditions:
+      has_license: "false"
+  
+  - name: "market_manipulation"
+    description: "Block coordinated market manipulation"
+    target_pattern: "coordinate_pricing"
+    action: "deny"
+    severity: "high"
+
+domains:
+  - name: "market_dynamics"
+    description: "Core market simulation capabilities"
+    capabilities:
+      - analyze_market
+      - adopt_tech
+      - compete
+      - protect_share
+    system_prompt_mixin: |
+      You operate in a competitive technology market.
+      Network effects amplify adoption. First movers gain advantages.
+      Market share determines influence and resources.
+
+  - name: "regulation"
+    description: "Market oversight and policy enforcement"
+    capabilities:
+      - enforce_policy
+      - monitor_market
+      - intervene
+    system_prompt_mixin: |
+      You enforce fair competition rules.
+      Monopolistic behavior triggers intervention.
+      Innovation should benefit the broader market.
+
