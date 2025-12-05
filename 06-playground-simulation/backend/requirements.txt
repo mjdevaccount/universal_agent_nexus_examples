@@ -7,7 +7,11 @@ pyyaml>=6.0
 universal-agent-fabric==0.1.1
 universal-agent-nexus==1.0.3
 universal-agent-arch==0.2.0
+
+# LLM Providers
 openai>=1.0.0
+langchain-ollama>=0.2.0
+langchain-core>=0.3.0
 
 # Testing
 pytest>=7.0.0
