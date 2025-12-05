@@ -69,7 +69,7 @@ This paper presents a novel approach to...
 
 ## Citations
 [1] Smith et al., 2023 - "..."
-[2] Jones, 2024 - "..."
+[2] Jones, 2025 - "..."
 ```
 
 ### Multi-Document Synthesis

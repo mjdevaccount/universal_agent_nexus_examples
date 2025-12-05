@@ -43,9 +43,9 @@ The included `sample_data.csv` contains example records:
 
 ```csv
 id,text,source,timestamp
-1,"Customer loves the new feature",support,2024-01-15
-2,"Having issues with login",support,2024-01-15
-3,"Great product, highly recommend",review,2024-01-14
+1,"Customer loves the new feature",support,2025-01-15
+2,"Having issues with login",support,2025-01-15
+3,"Great product, highly recommend",review,2025-01-14
 ```
 
 ## Configuration
