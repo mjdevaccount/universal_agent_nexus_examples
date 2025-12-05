@@ -1,0 +1,19 @@
+name: hello-world
+version: "1.0.0"
+description: "A simple greeting agent"
+
+graphs:
+  - name: main
+    entry_node: greet
+    nodes:
+      - id: greet
+        kind: task
+        label: "Generate Greeting"
+        config:
+          prompt: "Generate a friendly greeting for {name}"
+    edges: []
+
+tools: []
+routers: []
+policies: []
+

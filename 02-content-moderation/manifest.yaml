@@ -1,0 +1,126 @@
+name: content-moderation-pipeline
+version: "1.0.0"
+description: "Multi-stage content moderation with AI risk assessment"
+
+graphs:
+  - name: moderate_content
+    entry_node: risk_assessment
+    nodes:
+      - id: risk_assessment
+        kind: router
+        label: "AI Risk Classifier"
+        router_ref: risk_router
+        config:
+          model: "gpt-4o-mini"
+          prompt: |
+            Classify the risk level of this content:
+            {content}
+            
+            Categories: safe, low, medium, high, critical
+            
+            Return JSON: {"risk_level": "...", "reason": "..."}
+      
+      - id: auto_approve
+        kind: task
+        label: "Auto Approve"
+        config:
+          action: "approve"
+          status: "published"
+      
+      - id: policy_check
+        kind: tool
+        label: "Policy Validator"
+        tool_ref: policy_validator
+      
+      - id: human_review
+        kind: task
+        label: "Escalate to Human Review"
+        config:
+          action: "escalate"
+          queue: "moderation_queue"
+      
+      - id: auto_reject
+        kind: task
+        label: "Auto Reject"
+        config:
+          action: "reject"
+          reason: "violates_policy"
+    
+    edges:
+      - from_node: risk_assessment
+        to_node: auto_approve
+        condition:
+          trigger: success
+          route: "safe"
+      
+      - from_node: risk_assessment
+        to_node: policy_check
+        condition:
+          trigger: success
+          route: "low"
+      
+      - from_node: risk_assessment
+        to_node: human_review
+        condition:
+          trigger: success
+          route: "medium"
+      
+      - from_node: risk_assessment
+        to_node: auto_reject
+        condition:
+          trigger: success
+          route: "high"
+      
+      - from_node: risk_assessment
+        to_node: auto_reject
+        condition:
+          trigger: success
+          route: "critical"
+      
+      - from_node: policy_check
+        to_node: auto_approve
+        condition:
+          trigger: success
+          expression: "result.compliant == true"
+      
+      - from_node: policy_check
+        to_node: human_review
+        condition:
+          trigger: success
+          expression: "result.compliant == false"
+
+routers:
+  - name: risk_router
+    strategy: llm
+    system_message: "You are a content moderation AI. Classify content risk levels."
+    model_candidates:
+      - "gpt-4o-mini"
+      - "gpt-4o"
+    default_model: "gpt-4o-mini"
+
+tools:
+  - name: policy_validator
+    description: "Validates content against community policies"
+    protocol: "http"
+    config:
+      endpoint: "https://api.example.com/validate-policy"
+      method: "POST"
+      headers:
+        Content-Type: "application/json"
+    input_schema:
+      type: object
+      properties:
+        content:
+          type: string
+        policy_version:
+          type: string
+    output_schema:
+      type: object
+      properties:
+        compliant:
+          type: boolean
+        violations:
+          type: array
+
+policies: []
+

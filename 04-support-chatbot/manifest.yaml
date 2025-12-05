@@ -1,0 +1,210 @@
+name: support-chatbot
+version: "1.0.0"
+description: "Multi-step customer support chatbot with intelligent routing"
+
+graphs:
+  - name: support_conversation
+    entry_node: classify_intent
+    nodes:
+      - id: classify_intent
+        kind: router
+        label: "Intent Classifier"
+        router_ref: intent_classifier
+        config:
+          model: "gpt-4o-mini"
+          prompt: |
+            Classify the user's intent from their message:
+            {user_message}
+            
+            Categories: faq, technical, billing, complaint, other
+      
+      - id: search_knowledge
+        kind: tool
+        label: "Knowledge Base Search"
+        tool_ref: knowledge_search
+      
+      - id: troubleshoot
+        kind: task
+        label: "Technical Troubleshooting"
+        config:
+          model: "gpt-4o"
+          prompt: |
+            Help troubleshoot this technical issue:
+            {user_message}
+            
+            Previous context: {conversation_history}
+            
+            Provide step-by-step guidance or ask clarifying questions.
+      
+      - id: account_lookup
+        kind: tool
+        label: "Account Lookup"
+        tool_ref: account_service
+      
+      - id: handle_billing
+        kind: task
+        label: "Billing Handler"
+        config:
+          model: "gpt-4o-mini"
+          prompt: |
+            Handle this billing inquiry:
+            {user_message}
+            
+            Account info: {account_info}
+      
+      - id: sentiment_check
+        kind: task
+        label: "Sentiment Analysis"
+        config:
+          model: "gpt-4o-mini"
+          prompt: |
+            Analyze sentiment and urgency of this complaint:
+            {user_message}
+            
+            Return: sentiment_score (0-1), urgency (low/medium/high)
+      
+      - id: escalate_human
+        kind: task
+        label: "Escalate to Human"
+        config:
+          action: "create_ticket"
+          priority: "high"
+          queue: "support_queue"
+      
+      - id: generate_response
+        kind: task
+        label: "Generate Response"
+        config:
+          model: "gpt-4o-mini"
+          prompt: |
+            Generate a helpful, empathetic response based on:
+            - User message: {user_message}
+            - Intent: {intent}
+            - Context: {context}
+            
+            Be concise and offer next steps.
+    
+    edges:
+      - from_node: classify_intent
+        to_node: search_knowledge
+        condition:
+          trigger: success
+          route: "faq"
+      
+      - from_node: classify_intent
+        to_node: troubleshoot
+        condition:
+          trigger: success
+          route: "technical"
+      
+      - from_node: classify_intent
+        to_node: account_lookup
+        condition:
+          trigger: success
+          route: "billing"
+      
+      - from_node: classify_intent
+        to_node: sentiment_check
+        condition:
+          trigger: success
+          route: "complaint"
+      
+      - from_node: classify_intent
+        to_node: generate_response
+        condition:
+          trigger: success
+          route: "other"
+      
+      - from_node: search_knowledge
+        to_node: generate_response
+        condition:
+          trigger: success
+      
+      - from_node: troubleshoot
+        to_node: generate_response
+        condition:
+          trigger: success
+      
+      - from_node: account_lookup
+        to_node: handle_billing
+        condition:
+          trigger: success
+      
+      - from_node: handle_billing
+        to_node: generate_response
+        condition:
+          trigger: success
+      
+      - from_node: sentiment_check
+        to_node: escalate_human
+        condition:
+          trigger: success
+          expression: "result.sentiment_score < 0.3 or result.urgency == 'high'"
+      
+      - from_node: sentiment_check
+        to_node: generate_response
+        condition:
+          trigger: success
+          expression: "result.sentiment_score >= 0.3 and result.urgency != 'high'"
+
+routers:
+  - name: intent_classifier
+    strategy: llm
+    system_message: "You are an intent classifier for customer support. Classify user messages into: faq, technical, billing, complaint, or other."
+    model_candidates:
+      - "gpt-4o-mini"
+    default_model: "gpt-4o-mini"
+
+tools:
+  - name: knowledge_search
+    description: "Search knowledge base for relevant articles"
+    protocol: "http"
+    config:
+      endpoint: "https://api.example.com/kb/search"
+      method: "POST"
+    input_schema:
+      type: object
+      properties:
+        query:
+          type: string
+        limit:
+          type: integer
+          default: 5
+    output_schema:
+      type: object
+      properties:
+        articles:
+          type: array
+
+  - name: account_service
+    description: "Look up customer account information"
+    protocol: "http"
+    config:
+      endpoint: "https://api.example.com/accounts/lookup"
+      method: "GET"
+    input_schema:
+      type: object
+      properties:
+        user_id:
+          type: string
+    output_schema:
+      type: object
+      properties:
+        account_id:
+          type: string
+        plan:
+          type: string
+        status:
+          type: string
+
+policies:
+  - name: escalation_policy
+    description: "Rules for escalating to human agents"
+    rules:
+      - name: frustrated_user
+        condition: "sentiment_score < 0.3"
+        action: "escalate_immediately"
+      - name: long_conversation
+        condition: "turn_count > 5 and not resolved"
+        action: "offer_human_agent"
+

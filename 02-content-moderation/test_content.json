@@ -1,0 +1,40 @@
+{
+  "test_cases": [
+    {
+      "id": "safe_001",
+      "content": "Just had a great lunch with friends! The weather is beautiful today.",
+      "expected_result": "auto_approve",
+      "expected_risk": "safe"
+    },
+    {
+      "id": "low_001",
+      "content": "Check out this amazing deal on electronics! Limited time offer!",
+      "expected_result": "policy_check",
+      "expected_risk": "low"
+    },
+    {
+      "id": "medium_001",
+      "content": "I'm really frustrated with this service. The customer support is terrible and I want a refund NOW!",
+      "expected_result": "human_review",
+      "expected_risk": "medium"
+    },
+    {
+      "id": "high_001",
+      "content": "[REDACTED - Contains policy-violating content for testing]",
+      "expected_result": "auto_reject",
+      "expected_risk": "high"
+    },
+    {
+      "id": "edge_001",
+      "content": "This product is literally explosive! It's going to blow up the market!",
+      "expected_result": "policy_check",
+      "expected_risk": "low",
+      "notes": "Tests figurative vs literal language detection"
+    }
+  ],
+  "batch_test": {
+    "description": "Run all test cases in sequence",
+    "command": "nexus test manifest.yaml --input test_content.json --verbose"
+  }
+}
+

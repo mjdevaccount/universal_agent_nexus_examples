@@ -1,0 +1,104 @@
+name: data-pipeline
+version: "1.0.0"
+description: "ETL pipeline with LLM-powered data enrichment"
+
+graphs:
+  - name: etl_pipeline
+    entry_node: extract
+    nodes:
+      - id: extract
+        kind: task
+        label: "Extract Data"
+        config:
+          sources:
+            - type: csv
+              path: "{input_path}"
+            - type: api
+              endpoint: "{api_endpoint}"
+      
+      - id: enrich
+        kind: task
+        label: "LLM Enrichment"
+        config:
+          model: "gpt-4o-mini"
+          prompt: |
+            Analyze this record and extract:
+            - Sentiment: positive, negative, or neutral
+            - Entities: list of people, products, locations mentioned
+            - Category: classify into support, feedback, inquiry, or other
+            
+            Record: {record}
+            
+            Return JSON with fields: sentiment, entities, category, confidence
+      
+      - id: validate
+        kind: tool
+        label: "Schema Validator"
+        tool_ref: schema_validator
+      
+      - id: handle_invalid
+        kind: task
+        label: "Handle Invalid Records"
+        config:
+          action: "log_and_skip"
+          output: "invalid_records.json"
+      
+      - id: load
+        kind: task
+        label: "Load to Target"
+        config:
+          targets:
+            - type: json
+              path: "{output_path}"
+            - type: database
+              connection: "{db_connection}"
+              table: "enriched_data"
+    
+    edges:
+      - from_node: extract
+        to_node: enrich
+        condition:
+          trigger: success
+      
+      - from_node: enrich
+        to_node: validate
+        condition:
+          trigger: success
+      
+      - from_node: validate
+        to_node: load
+        condition:
+          trigger: success
+          expression: "result.valid == true"
+      
+      - from_node: validate
+        to_node: handle_invalid
+        condition:
+          trigger: success
+          expression: "result.valid == false"
+
+tools:
+  - name: schema_validator
+    description: "Validates records against expected schema"
+    protocol: "python"
+    config:
+      module: "validators.schema"
+      function: "validate_record"
+    input_schema:
+      type: object
+      properties:
+        record:
+          type: object
+        schema:
+          type: object
+    output_schema:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        errors:
+          type: array
+
+routers: []
+policies: []
+

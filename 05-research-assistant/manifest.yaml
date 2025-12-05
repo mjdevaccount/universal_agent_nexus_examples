@@ -1,0 +1,197 @@
+name: research-assistant
+version: "1.0.0"
+description: "Document analysis and multi-document synthesis assistant"
+
+graphs:
+  - name: analyze_document
+    entry_node: parse_document
+    nodes:
+      - id: parse_document
+        kind: tool
+        label: "Parse Document"
+        tool_ref: document_parser
+      
+      - id: chunk_content
+        kind: task
+        label: "Chunk Content"
+        config:
+          chunk_size: 1000
+          overlap: 200
+          strategy: "semantic"
+      
+      - id: extract_key_points
+        kind: task
+        label: "Extract Key Points"
+        config:
+          model: "gpt-4o"
+          prompt: |
+            Analyze this document section and extract key points:
+            {chunk}
+            
+            For each key point, provide:
+            - Claim: The main assertion
+            - Evidence: Supporting details
+            - Confidence: high/medium/low
+            - Page/Section: Location in document
+      
+      - id: extract_entities
+        kind: task
+        label: "Entity Extraction"
+        config:
+          model: "gpt-4o-mini"
+          prompt: |
+            Extract named entities from this text:
+            {chunk}
+            
+            Categories: people, organizations, locations, 
+            technologies, dates, citations
+      
+      - id: identify_themes
+        kind: task
+        label: "Theme Analysis"
+        config:
+          model: "gpt-4o"
+          prompt: |
+            Identify the main themes in this document:
+            {full_text}
+            
+            For each theme:
+            - Name and description
+            - Supporting evidence
+            - Relevance score (1-10)
+      
+      - id: generate_summary
+        kind: task
+        label: "Generate Summary"
+        config:
+          model: "gpt-4o"
+          prompt: |
+            Generate a comprehensive summary based on:
+            - Key Points: {key_points}
+            - Entities: {entities}
+            - Themes: {themes}
+            
+            Structure:
+            1. Executive Summary (2-3 sentences)
+            2. Main Arguments
+            3. Key Findings
+            4. Implications
+    
+    edges:
+      - from_node: parse_document
+        to_node: chunk_content
+        condition:
+          trigger: success
+      
+      - from_node: chunk_content
+        to_node: extract_key_points
+        condition:
+          trigger: success
+      
+      - from_node: chunk_content
+        to_node: extract_entities
+        condition:
+          trigger: success
+      
+      - from_node: extract_key_points
+        to_node: identify_themes
+        condition:
+          trigger: success
+      
+      - from_node: identify_themes
+        to_node: generate_summary
+        condition:
+          trigger: success
+      
+      - from_node: extract_entities
+        to_node: generate_summary
+        condition:
+          trigger: success
+
+  - name: synthesize_documents
+    entry_node: collect_summaries
+    nodes:
+      - id: collect_summaries
+        kind: task
+        label: "Collect Document Summaries"
+        config:
+          action: "aggregate"
+          source: "analyze_document.results"
+      
+      - id: compare_findings
+        kind: task
+        label: "Compare Findings"
+        config:
+          model: "gpt-4o"
+          prompt: |
+            Compare findings across these documents:
+            {summaries}
+            
+            Identify:
+            1. Common themes and agreements
+            2. Contrasting views and disagreements
+            3. Unique contributions from each document
+            4. Gaps in the collective knowledge
+      
+      - id: synthesize
+        kind: task
+        label: "Generate Synthesis"
+        config:
+          model: "gpt-4o"
+          prompt: |
+            Create a comprehensive synthesis of these documents:
+            
+            Comparisons: {comparisons}
+            
+            Structure:
+            1. Overview
+            2. Key Themes (with citations)
+            3. Areas of Agreement
+            4. Areas of Debate
+            5. Recommendations
+            6. Bibliography
+    
+    edges:
+      - from_node: collect_summaries
+        to_node: compare_findings
+        condition:
+          trigger: success
+      
+      - from_node: compare_findings
+        to_node: synthesize
+        condition:
+          trigger: success
+
+tools:
+  - name: document_parser
+    description: "Parse various document formats into text"
+    protocol: "python"
+    config:
+      module: "parsers.document"
+      function: "parse"
+      supported_formats:
+        - pdf
+        - docx
+        - txt
+        - md
+        - html
+    input_schema:
+      type: object
+      properties:
+        file_path:
+          type: string
+        format:
+          type: string
+    output_schema:
+      type: object
+      properties:
+        text:
+          type: string
+        metadata:
+          type: object
+        pages:
+          type: integer
+
+routers: []
+policies: []
+
