@@ -2,28 +2,46 @@
 LLM Provider using Universal Agent Fabric + danielmiessler Fabric.
 
 Architecture:
-1. Universal Agent Fabric - Compiles role definitions
+1. Universal Agent Fabric - Compiles role definitions via FabricBuilder
 2. danielmiessler Fabric - Handles LLM provider abstraction
+
+This module bridges the compiled Fabric specs to actual LLM calls.
 """
 
 import subprocess
-import os
-from typing import List, Dict, Optional
+import asyncio
+from typing import Dict, Optional
 from pathlib import Path
 import yaml
+
+from schemas import CompiledAgent
+
+
+def get_project_root() -> Path:
+    """Get the project root directory (06-playground-simulation)."""
+    current = Path(__file__).resolve().parent
+    
+    if current.name == "backend":
+        return current.parent
+    
+    while current != current.parent:
+        if (current / "fabric_archetypes").exists():
+            return current
+        current = current.parent
+    
+    cwd = Path.cwd()
+    if (cwd / "fabric_archetypes").exists():
+        return cwd
+    if (cwd / "06-playground-simulation" / "fabric_archetypes").exists():
+        return cwd / "06-playground-simulation"
+    
+    return Path(__file__).resolve().parent.parent
 
 
 class AgentFabricProvider:
     """
     LLM provider using YOUR Universal Agent Fabric for roles
     + danielmiessler Fabric for LLM calls.
-    
-    Setup:
-        # Install danielmiessler Fabric
-        fabric --setup
-        
-        # Your Universal Agent Fabric is already installed
-        pip install universal-agent-fabric
     
     Usage:
         provider = AgentFabricProvider(archetype="bully")
@@ -33,12 +51,50 @@ class AgentFabricProvider:
     def __init__(
         self,
         archetype: str,
-        fabric_dir: str = "../fabric_archetypes",
+        project_root: Optional[Path] = None,
+        use_compiler: bool = True,
     ):
         self.archetype = archetype
-        self.fabric_dir = Path(fabric_dir)
-        self.role_def = self._load_role()
+        
+        if project_root is None:
+            project_root = get_project_root()
+        
+        self.project_root = Path(project_root)
+        self.fabric_dir = self.project_root / "fabric_archetypes"
+        self.use_compiler = use_compiler
+        self.compiled_agent: Optional[CompiledAgent] = None
+        
+        # Try to use the full compiler, fall back to simple loading
+        if use_compiler:
+            try:
+                from fabric_compiler import get_compiler
+                compiler = get_compiler()
+                self.compiled_agent = compiler.compile_agent(archetype)
+                self.role_def = {
+                    "name": self.compiled_agent.name,
+                    "system_prompt_template": self.compiled_agent.system_prompt,
+                    "base_template": self.compiled_agent.base_template,
+                    "default_capabilities": self.compiled_agent.capabilities,
+                }
+            except Exception as e:
+                # Fall back to simple loading
+                print(f"Compiler fallback: {e}")
+                self.compiled_agent = None
+                self.role_def = self._load_role_simple()
+        else:
+            self.role_def = self._load_role_simple()
+        
         self.fabric_available = self._check_fabric_cli()
+    
+    def _load_role_simple(self) -> Dict:
+        """Load role definition directly from YAML (fallback)."""
+        role_path = self.fabric_dir / f"{self.archetype}.yaml"
+        
+        if not role_path.exists():
+            raise ValueError(f"Archetype not found: {self.archetype} (looked in {role_path})")
+        
+        with open(role_path) as f:
+            return yaml.safe_load(f)
     
     def _check_fabric_cli(self) -> bool:
         """Verify danielmiessler Fabric CLI is installed."""
@@ -51,16 +107,6 @@ class AgentFabricProvider:
             return True
         except (subprocess.CalledProcessError, FileNotFoundError):
             return False
-    
-    def _load_role(self) -> Dict:
-        """Load role definition from Universal Agent Fabric."""
-        role_path = self.fabric_dir / f"{self.archetype}.yaml"
-        
-        if not role_path.exists():
-            raise ValueError(f"Archetype not found: {self.archetype}")
-        
-        with open(role_path) as f:
-            return yaml.safe_load(f)
     
     async def complete(
         self,
@@ -82,7 +128,7 @@ class AgentFabricProvider:
             Generated text
         """
         # Build prompt from YOUR Fabric role definition
-        system_prompt = self.role_def["system_prompt_template"]
+        system_prompt = self.role_def.get("system_prompt_template", "")
         
         # Combine with context
         full_prompt = f"{system_prompt}\n\nScenario: {scenario}\n\nConversation:\n{context}\n\nYou say:"
@@ -94,8 +140,6 @@ class AgentFabricProvider:
     
     async def _complete_with_fabric(self, full_prompt: str, temperature: float) -> str:
         """Call danielmiessler Fabric for LLM execution."""
-        import asyncio
-        
         try:
             result = await asyncio.to_thread(
                 lambda: subprocess.run(
@@ -129,8 +173,6 @@ class AgentFabricProvider:
         temperature: float
     ) -> str:
         """Fallback to direct OpenAI call if Fabric CLI not available."""
-        import asyncio
-        
         try:
             from openai import OpenAI
             client = OpenAI()
@@ -160,10 +202,12 @@ class AgentFabricProvider:
             "base_template": self.role_def.get("base_template"),
             "capabilities": self.role_def.get("default_capabilities", []),
             "fabric_cli_available": self.fabric_available,
+            "compiled": self.compiled_agent is not None,
+            "domains": self.compiled_agent.domains if self.compiled_agent else [],
+            "governance_rules": self.compiled_agent.governance_rules if self.compiled_agent else [],
         }
 
 
-def create_provider(archetype: str) -> AgentFabricProvider:
+def create_provider(archetype: str, use_compiler: bool = True) -> AgentFabricProvider:
     """Factory function to create providers."""
-    return AgentFabricProvider(archetype=archetype)
-
+    return AgentFabricProvider(archetype=archetype, use_compiler=use_compiler)

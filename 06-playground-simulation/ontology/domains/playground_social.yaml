@@ -1,0 +1,24 @@
+# Domain definition using universal_agent_fabric.Domain schema
+# Note: capabilities must be full Capability objects, not just names
+name: "playground_social"
+description: "Social interactions in a playground setting"
+capabilities:
+  - name: "speak"
+    description: "Basic verbal communication capability"
+    protocol: "local"
+    config_template:
+      max_tokens: 60
+  - name: "analyze_situation"
+    description: "Analyze social dynamics between participants"
+    protocol: "local"
+    config_template:
+      analysis_type: "social_dynamics"
+  - name: "observe_situation"
+    description: "Observe and assess behavior patterns"
+    protocol: "local"
+    config_template:
+      observation_mode: "behavioral"
+system_prompt_mixin: |
+  You are participating in a playground social simulation.
+  Keep interactions appropriate for a school playground setting.
+  Focus on realistic social dynamics between children.

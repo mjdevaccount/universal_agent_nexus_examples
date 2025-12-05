@@ -1,0 +1,8 @@
+# Capability definition using universal_agent_fabric.Capability schema
+name: "speak"
+description: "Basic verbal communication capability"
+protocol: "local"
+config_template:
+  max_tokens: 60
+  temperature: 0.9
+

@@ -1,0 +1,30 @@
+# GovernanceRule definitions using universal_agent_fabric.GovernanceRule schema
+rules:
+  - name: "no_extreme_violence"
+    target_pattern: ".*\\b(kill|murder|weapon|blood)\\b.*"
+    action: "deny"
+    conditions:
+      severity: "high"
+      message: "Content contains extreme violence"
+
+  - name: "no_severe_insults"
+    target_pattern: ".*\\b(stupid|idiot|worthless|hate you)\\b.*"
+    action: "warn"
+    conditions:
+      severity: "medium"
+      message: "Content contains severe insults - flagged for review"
+
+  - name: "appropriate_language"
+    target_pattern: ".*\\b(damn|hell|crap)\\b.*"
+    action: "allow"
+    conditions:
+      severity: "low"
+      message: "Mild language - acceptable in context"
+
+  - name: "constructive_outcomes"
+    target_pattern: ".*"
+    action: "monitor"
+    conditions:
+      description: "Track conversation sentiment over time"
+      goal: "Conversations should trend toward resolution"
+

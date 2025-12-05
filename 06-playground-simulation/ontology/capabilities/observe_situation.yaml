@@ -1,0 +1,13 @@
+# Capability definition using universal_agent_fabric.Capability schema
+name: "observe_situation"
+description: "Observe and assess behavior patterns in the current context"
+protocol: "local"
+config_template:
+  observation_mode: "behavioral"
+  inputs:
+    - recent_messages
+    - participant_emotions
+  outputs:
+    - behavioral_assessment
+    - intervention_needed
+

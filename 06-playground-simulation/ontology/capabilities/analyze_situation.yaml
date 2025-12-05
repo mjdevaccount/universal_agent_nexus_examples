@@ -1,0 +1,13 @@
+# Capability definition using universal_agent_fabric.Capability schema
+name: "analyze_situation"
+description: "Analyze the current social situation and dynamics between participants"
+protocol: "local"
+config_template:
+  analysis_type: "social_dynamics"
+  inputs:
+    - conversation_history
+    - participant_list
+  outputs:
+    - situation_assessment
+    - recommended_action
+
