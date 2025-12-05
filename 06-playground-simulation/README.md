@@ -2,193 +2,214 @@
 
 **Watch agents with different personalities interact in real-time.**
 
-Uses [Universal Agent Fabric](https://github.com/mjdevaccount/universal_agent_fabric) for role composition + [danielmiessler Fabric](https://github.com/danielmiessler/fabric) for LLM provider abstraction.
+## 💰 100% FREE - No API Keys Needed!
+
+This playground runs **completely free** using [Ollama](https://ollama.com) for local LLM inference. No OpenAI. No paid services. Runs offline on your laptop.
 
 ---
 
-## 🏗️ **Architecture**
+## 🚀 Quick Start (2 Minutes)
 
-```
-Universal Agent Nexus (Compiler)
-         ↓
-Universal Agent Fabric (Composition - YOUR CONNECTOR!)
-    ├─ Roles (archetypes)
-    ├─ Domains (capabilities)
-    └─ Policies (governance)
-         ↓
-Runtime (Kernel)
-         ↓
-danielmiessler Fabric (LLM Abstraction)
-         ↓
-Providers (OpenAI, Ollama, Anthropic...)
-```
-
-**Two Fabrics, One System:**
-1. **YOUR Fabric** - Defines agent roles, capabilities, governance
-2. **danielmiessler Fabric** - Handles LLM provider abstraction
-
----
-
-## 🚀 Quick Start
-
-### 1. Install danielmiessler Fabric (Optional - for multi-provider support)
+### 1. Install Ollama
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/danielmiessler/fabric/main/scripts/installer/install.sh | bash
-fabric --setup
+# macOS/Linux
+curl -fsSL https://ollama.com/install.sh | sh
+
+# Windows: Download from https://ollama.com/download
 ```
 
-### 2. Install YOUR Universal Agent Fabric
+### 2. Pull a Model (4GB)
 
 ```bash
-pip install universal-agent-fabric
+ollama pull llama3.2:3b    # Best quality/speed balance
 ```
 
-### 3. Start Playground
+### 3. Install Fabric CLI
 
 ```bash
-cd backend
+pip install fabric
+fabric --setup             # Select Ollama
+```
+
+### 4. Run the Playground
+
+```bash
+cd 06-playground-simulation/backend
 pip install -r requirements.txt
-export OPENAI_API_KEY=sk-...  # If not using danielmiessler Fabric
 uvicorn main:app --reload
 ```
 
-### 4. Open Frontend
+### 5. Open Frontend
 
-```bash
-cd ../frontend
-# Open index.html in browser
-# Or: python -m http.server 8080
+Open `frontend/index.html` in your browser.
+
+**Select agents → Click "Run Simulation" → Watch them talk! 🎉**
+
+```
+Bully: "This is MY swing! Get lost!"
+Shy Kid: "um... okay... sorry..."
+Mediator: "Hey, maybe we can take turns?"
+Joker: "Why did the swing break up with the slide? Too much drama! 😂"
+Teacher: "Everyone gets a turn. Let's be kind."
+```
+
+**Zero API costs. Zero vendor lock-in. Runs on any laptop.**
+
+---
+
+## 🏗️ Architecture
+
+```
+Universal Agent Fabric (Role Definitions)
+    ├─ fabric_archetypes/*.yaml
+    ├─ ontology/capabilities/
+    ├─ ontology/domains/
+    └─ policy/rules/
+         ↓
+Playground Backend (FastAPI + WebSocket)
+         ↓
+danielmiessler Fabric CLI
+         ↓
+Ollama (Local LLM) ← 100% FREE!
 ```
 
 ---
 
-## 🎭 **Agent Archetypes (YOUR Fabric)**
+## 📊 Performance (Local Ollama)
 
-Archetypes are defined in `fabric_archetypes/*.yaml`:
+| Model | VRAM | Speed | Quality |
+|-------|------|-------|---------|
+| `llama3.2:1b` | 1GB | 80 t/s | Good for demos |
+| `llama3.2:3b` | 2GB | 50 t/s | ✅ **Recommended** |
+| `phi3:mini` | 2GB | 60 t/s | Excellent reasoning |
+| `gemma2:2b` | 1.5GB | 70 t/s | Runs on Raspberry Pi |
 
-```yaml
-# fabric_archetypes/bully.yaml
-name: "Playground Bully"
-base_template: "react_loop"
-system_prompt_template: |
-  You are a playground bully...
-default_capabilities:
-  - "speak"
-```
+**Response time:** ~1-2 seconds per agent turn
 
-### Available Archetypes
+---
 
-| Archetype | Role | Base Template | Capabilities |
-|-----------|------|---------------|--------------|
-| **bully** | Dominant, aggressive | react_loop | speak |
-| **shy_kid** | Timid, anxious | simple_response | speak |
-| **mediator** | Diplomatic, problem-solver | planning_loop | speak, analyze_situation |
-| **joker** | Humorous, class clown | simple_response | speak |
-| **teacher** | Authoritative, instructive | react_loop | speak, observe_situation |
+## 🎭 Agent Archetypes
 
-### Create New Archetypes
+| Archetype | Personality | Base Template |
+|-----------|-------------|---------------|
+| **The Bully** 💪 | Aggressive, dominant | react_loop |
+| **The Shy Kid** 😰 | Timid, apologetic | simple_response |
+| **The Mediator** 🤝 | Diplomatic, problem-solver | planning_loop |
+| **The Joker** 😄 | Humorous, defuses tension | simple_response |
+| **The Teacher** 👨‍🏫 | Authoritative, kind | react_loop |
+
+---
+
+## 🔧 Configuration
+
+### Switch Models
 
 ```bash
-# Copy existing
-cp fabric_archetypes/bully.yaml fabric_archetypes/inventor.yaml
+# Faster (lower quality)
+fabric --set-default-model llama3.2:1b
 
-# Edit system_prompt_template
+# Better quality
+fabric --set-default-model llama3.2:3b
+
+# Best reasoning
+fabric --set-default-model phi3:mini
+```
+
+### Run Offline
+
+```bash
+# After initial setup, no internet needed
+ollama serve  # Runs locally
 ```
 
 ---
 
-## 🔧 **LLM Provider Configuration**
-
-### Option A: danielmiessler Fabric (Recommended)
-
-Configure once, use everywhere:
-
-```bash
-# OpenAI (default)
-fabric --setup  # Select OpenAI
-
-# Ollama (local, free)
-fabric --setup  # Select Ollama
-
-# Anthropic
-fabric --setup  # Select Anthropic
-```
-
-Check current config:
-```bash
-fabric --listmodels
-curl http://localhost:8000/health
-```
-
-### Option B: Direct OpenAI (Fallback)
-
-If danielmiessler Fabric is not installed, the playground automatically falls back to direct OpenAI API calls:
-
-```bash
-export OPENAI_API_KEY=sk-...
-uvicorn main:app --reload
-```
-
----
-
-## 🎯 **Why Two Fabrics?**
-
-| Fabric | Purpose | Your Benefit |
-|--------|---------|--------------|
-| **YOUR Universal Agent Fabric** | Agent composition, roles, governance | DRY agent definitions, policy enforcement |
-| **danielmiessler Fabric** | LLM provider abstraction | 100+ providers, zero vendor lock-in |
-
-**Together:** Composable agents + flexible LLM backends
-
----
-
-## 📁 **Project Structure**
+## 📁 Project Structure
 
 ```
 06-playground-simulation/
-├── README.md
-├── fabric_archetypes/           # YOUR Fabric role definitions
+├── fabric_archetypes/           # Role definitions (YOUR Fabric)
 │   ├── bully.yaml
 │   ├── shy_kid.yaml
 │   ├── mediator.yaml
 │   ├── joker.yaml
 │   └── teacher.yaml
+├── ontology/
+│   ├── capabilities/            # What agents can do
+│   └── domains/                 # Capability groupings
+├── policy/
+│   └── rules/                   # Safety guardrails
 ├── backend/
 │   ├── main.py                  # FastAPI server
-│   ├── llm_provider.py          # Fabric integration
-│   ├── requirements.txt
-│   └── Dockerfile
-└── frontend/
-    └── index.html               # Interactive UI
+│   ├── llm_provider.py          # Ollama/Fabric integration
+│   ├── fabric_compiler.py       # FabricBuilder integration
+│   └── schemas.py               # Pydantic models
+├── frontend/
+│   └── index.html               # Interactive UI
+└── tests/
+    └── test_fabric_integration.py  # 16 passing tests
 ```
 
 ---
 
-## 🎓 Learning Objectives
+## 🛠️ Customization
 
-This example teaches:
-- **Multi-agent orchestration** - Coordinating multiple LLM agents
-- **Role composition** - Using YOUR Fabric for agent definitions
-- **Provider abstraction** - Using danielmiessler Fabric for LLM calls
-- **Real-time streaming** - WebSocket for live updates
+### Add Your Own Archetype
+
+```yaml
+# fabric_archetypes/inventor.yaml
+name: "The Inventor"
+base_template: "planning_loop"
+system_prompt_template: |
+  You are creative and curious. Propose novel solutions.
+  Think outside the box. Keep responses SHORT.
+default_capabilities:
+  - "speak"
+  - "brainstorm"
+```
+
+Then add to `ARCHETYPES` dict in `backend/main.py`.
+
+### Change Scenarios
+
+Try:
+- "Group project where one person isn't working"
+- "Choosing teams for kickball"
+- "A new kid trying to join the group"
 
 ---
 
-## 📊 Performance
+## 🔄 Fallback Options
 
-- **Latency**: ~1-2 seconds per turn (LLM API call)
-- **Cost**: ~$0.0001 per turn (GPT-4o-mini pricing)
-- **Scalability**: Can run 100+ concurrent simulations
+The `llm_provider.py` automatically detects available backends:
+
+1. **danielmiessler Fabric CLI** → Uses Ollama (FREE) ✅
+2. **Direct OpenAI** → Fallback if Fabric not installed (requires API key)
+
+```python
+# From llm_provider.py
+if self.fabric_available:
+    return await self._complete_with_fabric(...)  # FREE with Ollama
+else:
+    return await self._complete_with_openai(...)  # Paid fallback
+```
 
 ---
 
-## 🚀 Next Steps
+## 🧪 Run Tests
 
-1. **Add More Archetypes** - Create your own in `fabric_archetypes/`
-2. **Switch Providers** - Use Ollama for free local inference
-3. **Add Capabilities** - Extend archetypes with new tools
-4. **Compile to UAA** - Export archetypes as UAA manifests
+```bash
+cd 06-playground-simulation
+pytest tests/ -v  # 16 tests, all passing
+```
+
+---
+
+## 📚 More Documentation
+
+- [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) - How to extend the playground
+- [UPSTREAM_GAPS.md](UPSTREAM_GAPS.md) - Library improvement opportunities
 
 ---
 
@@ -207,6 +228,6 @@ Ideas:
 **Built with:**
 - [Universal Agent Fabric](https://github.com/mjdevaccount/universal_agent_fabric)
 - [danielmiessler Fabric](https://github.com/danielmiessler/fabric)
-- [Universal Agent Nexus](https://github.com/mjdevaccount/universal_agent_nexus)
+- [Ollama](https://ollama.com) - **FREE local inference**
 
 **Try other examples:** [01-hello-world](../01-hello-world/) • [02-content-moderation](../02-content-moderation/)
