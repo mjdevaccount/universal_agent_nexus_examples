@@ -2,107 +2,166 @@
 
 **Watch agents with different personalities interact in real-time.**
 
-Build characters (bully, shy kid, mediator, etc), set a scenario, and watch them have conversations driven by LLMs.
+Uses [Universal Agent Fabric](https://github.com/mjdevaccount/universal_agent_fabric) for role composition + [danielmiessler Fabric](https://github.com/danielmiessler/fabric) for LLM provider abstraction.
+
+---
+
+## 🏗️ **Architecture**
+
+```
+Universal Agent Nexus (Compiler)
+         ↓
+Universal Agent Fabric (Composition - YOUR CONNECTOR!)
+    ├─ Roles (archetypes)
+    ├─ Domains (capabilities)
+    └─ Policies (governance)
+         ↓
+Runtime (Kernel)
+         ↓
+danielmiessler Fabric (LLM Abstraction)
+         ↓
+Providers (OpenAI, Ollama, Anthropic...)
+```
+
+**Two Fabrics, One System:**
+1. **YOUR Fabric** - Defines agent roles, capabilities, governance
+2. **danielmiessler Fabric** - Handles LLM provider abstraction
 
 ---
 
 ## 🚀 Quick Start
 
-### Option 1: Local Development
+### 1. Install danielmiessler Fabric (Optional - for multi-provider support)
 
 ```bash
-# 1. Start backend
+curl -fsSL https://raw.githubusercontent.com/danielmiessler/fabric/main/scripts/installer/install.sh | bash
+fabric --setup
+```
+
+### 2. Install YOUR Universal Agent Fabric
+
+```bash
+pip install universal-agent-fabric
+```
+
+### 3. Start Playground
+
+```bash
 cd backend
 pip install -r requirements.txt
-export OPENAI_API_KEY=sk-...  # Your OpenAI API key
+export OPENAI_API_KEY=sk-...  # If not using danielmiessler Fabric
 uvicorn main:app --reload
-
-# 2. Open frontend
-cd ../frontend
-# Open index.html in your browser
-# Or use: python -m http.server 8080
 ```
 
-### Option 2: Docker
+### 4. Open Frontend
 
 ```bash
-docker build -t agent-playground backend/
-docker run -p 8000:8000 -e OPENAI_API_KEY=sk-... agent-playground
-```
-
-Then open `frontend/index.html` in your browser.
-
----
-
-## 🎭 Available Agent Archetypes
-
-### 1. **The Bully** 💪
-- **Personality**: High aggression, low empathy
-- **Behavior**: Dominates conversations, uses intimidation
-- **Example**: "That's MY swing! Get lost!"
-
-### 2. **The Shy Kid** 😰
-- **Personality**: Low aggression, high empathy
-- **Behavior**: Hesitant, apologetic, avoids conflict
-- **Example**: "Um... sorry... I just wanted to..."
-
-### 3. **The Mediator** 🤝
-- **Personality**: Diplomatic, problem-solver
-- **Behavior**: Suggests compromises, calms situations
-- **Example**: "Hey, maybe we can take turns?"
-
-### 4. **The Joker** 😄
-- **Personality**: Humorous, class clown
-- **Behavior**: Makes jokes, uses humor to defuse
-- **Example**: "Why did the chicken cross the playground? 🐔"
-
-### 5. **The Teacher** 👨‍🏫
-- **Personality**: Authoritative, instructive
-- **Behavior**: Maintains order, guides behavior
-- **Example**: "Everyone, let's calm down and talk this through."
-
----
-
-## 🎯 How It Works
-
-This playground demonstrates **Universal Agent Nexus** capabilities:
-
-1. **Agent Personalities** - Each archetype has a system prompt defining behavior
-2. **LLM Reasoning** - GPT-4o-mini generates contextual responses
-3. **Real-time Simulation** - WebSocket streams conversation
-4. **Observable Behavior** - Watch personality traits emerge
-
-**Under the hood:**
-```
-Each agent is compiled from a UAA manifest
-archetype → UAA manifest → LangGraph runtime → LLM calls
+cd ../frontend
+# Open index.html in browser
+# Or: python -m http.server 8080
 ```
 
 ---
 
-## 🛠️ Customization
+## 🎭 **Agent Archetypes (YOUR Fabric)**
 
-### Add Your Own Archetype
+Archetypes are defined in `fabric_archetypes/*.yaml`:
 
-Edit `backend/main.py` and add to `ARCHETYPES`:
-
-```python
-ARCHETYPES["rebel"] = {
-    "name": "The Rebel",
-    "role": "Anti-authority",
-    "personality": {"aggression": 7, "empathy": 4, "confidence": 9},
-    "prompt": """You are rebellious. You question authority,
-    break rules, and challenge the status quo."""
-}
+```yaml
+# fabric_archetypes/bully.yaml
+name: "Playground Bully"
+base_template: "react_loop"
+system_prompt_template: |
+  You are a playground bully...
+default_capabilities:
+  - "speak"
 ```
 
-### Change Scenarios
+### Available Archetypes
 
-Try these:
-- "Group project where one person isn't doing their part"
-- "Choosing teams for kickball"
-- "Someone spreading rumors"
-- "A new kid trying to join the group"
+| Archetype | Role | Base Template | Capabilities |
+|-----------|------|---------------|--------------|
+| **bully** | Dominant, aggressive | react_loop | speak |
+| **shy_kid** | Timid, anxious | simple_response | speak |
+| **mediator** | Diplomatic, problem-solver | planning_loop | speak, analyze_situation |
+| **joker** | Humorous, class clown | simple_response | speak |
+| **teacher** | Authoritative, instructive | react_loop | speak, observe_situation |
+
+### Create New Archetypes
+
+```bash
+# Copy existing
+cp fabric_archetypes/bully.yaml fabric_archetypes/inventor.yaml
+
+# Edit system_prompt_template
+```
+
+---
+
+## 🔧 **LLM Provider Configuration**
+
+### Option A: danielmiessler Fabric (Recommended)
+
+Configure once, use everywhere:
+
+```bash
+# OpenAI (default)
+fabric --setup  # Select OpenAI
+
+# Ollama (local, free)
+fabric --setup  # Select Ollama
+
+# Anthropic
+fabric --setup  # Select Anthropic
+```
+
+Check current config:
+```bash
+fabric --listmodels
+curl http://localhost:8000/health
+```
+
+### Option B: Direct OpenAI (Fallback)
+
+If danielmiessler Fabric is not installed, the playground automatically falls back to direct OpenAI API calls:
+
+```bash
+export OPENAI_API_KEY=sk-...
+uvicorn main:app --reload
+```
+
+---
+
+## 🎯 **Why Two Fabrics?**
+
+| Fabric | Purpose | Your Benefit |
+|--------|---------|--------------|
+| **YOUR Universal Agent Fabric** | Agent composition, roles, governance | DRY agent definitions, policy enforcement |
+| **danielmiessler Fabric** | LLM provider abstraction | 100+ providers, zero vendor lock-in |
+
+**Together:** Composable agents + flexible LLM backends
+
+---
+
+## 📁 **Project Structure**
+
+```
+06-playground-simulation/
+├── README.md
+├── fabric_archetypes/           # YOUR Fabric role definitions
+│   ├── bully.yaml
+│   ├── shy_kid.yaml
+│   ├── mediator.yaml
+│   ├── joker.yaml
+│   └── teacher.yaml
+├── backend/
+│   ├── main.py                  # FastAPI server
+│   ├── llm_provider.py          # Fabric integration
+│   ├── requirements.txt
+│   └── Dockerfile
+└── frontend/
+    └── index.html               # Interactive UI
+```
 
 ---
 
@@ -110,36 +169,15 @@ Try these:
 
 This example teaches:
 - **Multi-agent orchestration** - Coordinating multiple LLM agents
-- **Personality modeling** - Using system prompts to create consistent behaviors
+- **Role composition** - Using YOUR Fabric for agent definitions
+- **Provider abstraction** - Using danielmiessler Fabric for LLM calls
 - **Real-time streaming** - WebSocket for live updates
-- **LLM prompt engineering** - Crafting effective agent prompts
-
----
-
-## 🔧 Technical Architecture
-
-```
-Frontend (HTML/JS)
-       ↓ WebSocket
-Backend (FastAPI)
-       ↓
-Simulation Engine
-       ↓
-OpenAI GPT-4o-mini
-       ↓
-Response Stream → Frontend
-```
-
-**Key files:**
-- `backend/main.py` - FastAPI server with simulation logic
-- `frontend/index.html` - Single-page interactive UI
-- `manifests/` - UAA definitions for each archetype (optional)
 
 ---
 
 ## 📊 Performance
 
-- **Latency**: ~1-2 seconds per turn (OpenAI API call)
+- **Latency**: ~1-2 seconds per turn (LLM API call)
 - **Cost**: ~$0.0001 per turn (GPT-4o-mini pricing)
 - **Scalability**: Can run 100+ concurrent simulations
 
@@ -147,11 +185,10 @@ Response Stream → Frontend
 
 ## 🚀 Next Steps
 
-1. **Add More Archetypes** - Create your own personalities
-2. **Multi-modal Agents** - Add voice/image generation
-3. **Persistent Memory** - Agents remember past interactions
-4. **Emotion Tracking** - Visualize agent emotional states
-5. **Compile to UAA** - Export archetypes as UAA manifests
+1. **Add More Archetypes** - Create your own in `fabric_archetypes/`
+2. **Switch Providers** - Use Ollama for free local inference
+3. **Add Capabilities** - Extend archetypes with new tools
+4. **Compile to UAA** - Export archetypes as UAA manifests
 
 ---
 
@@ -167,7 +204,9 @@ Ideas:
 
 ---
 
-**Built with [Universal Agent Nexus](https://github.com/mjdevaccount/universal_agent_nexus)**
+**Built with:**
+- [Universal Agent Fabric](https://github.com/mjdevaccount/universal_agent_fabric)
+- [danielmiessler Fabric](https://github.com/danielmiessler/fabric)
+- [Universal Agent Nexus](https://github.com/mjdevaccount/universal_agent_nexus)
 
 **Try other examples:** [01-hello-world](../01-hello-world/) • [02-content-moderation](../02-content-moderation/)
-
