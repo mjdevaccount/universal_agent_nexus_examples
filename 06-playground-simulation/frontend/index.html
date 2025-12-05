@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 Agent Playground - Universal Agent Nexus</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 3rem;
+        }
+        
+        header h1 { font-size: 3rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        header p { font-size: 1.2rem; opacity: 0.9; }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 1.5rem;
+        }
+        
+        .panel {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        }
+        
+        .panel h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+        
+        /* Agent Builder */
+        .agent-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            border: 2px solid #e9ecef;
+        }
+        
+        .agent-card select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+            background: white;
+        }
+        
+        .agent-role {
+            font-size: 0.875rem;
+            color: #6c757d;
+            margin-bottom: 0.75rem;
+        }
+        
+        .personality-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .personality-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+        }
+        
+        .bar-label {
+            width: 80px;
+            color: #495057;
+            font-weight: 600;
+        }
+        
+        .bar-bg {
+            flex: 1;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s;
+        }
+        
+        .remove-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+        
+        .add-agent-btn {
+            width: 100%;
+            padding: 1rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+        
+        .add-agent-btn:hover { background: #5568d3; }
+        
+        /* Scenario */
+        textarea {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 1rem;
+            resize: vertical;
+            font-family: inherit;
+        }
+        
+        .run-btn {
+            width: 100%;
+            padding: 1.25rem;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.25rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+        
+        .run-btn:hover { background: #218838; }
+        .run-btn:disabled { background: #6c757d; cursor: not-allowed; }
+        
+        /* Conversation */
+        .conversation {
+            height: 600px;
+            overflow-y: auto;
+            padding-right: 1rem;
+        }
+        
+        .message {
+            margin-bottom: 1.5rem;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .avatar.bully { background: #dc3545; }
+        .avatar.shy_kid { background: #6c757d; }
+        .avatar.mediator { background: #28a745; }
+        .avatar.joker { background: #ffc107; color: #333; }
+        .avatar.teacher { background: #007bff; }
+        
+        .agent-name {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .message-content {
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+            margin-left: 52px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: #6c757d;
+            padding: 4rem 2rem;
+        }
+        
+        .empty-state-icon { font-size: 4rem; margin-bottom: 1rem; opacity: 0.5; }
+        
+        /* Scrollbar */
+        .conversation::-webkit-scrollbar { width: 8px; }
+        .conversation::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        .conversation::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        .conversation::-webkit-scrollbar-thumb:hover { background: #555; }
+        
+        /* Responsive */
+        @media (max-width: 900px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            header h1 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎮 Agent Playground</h1>
+            <p>Build agents with different personalities and watch them interact</p>
+        </header>
+        
+        <div class="grid">
+            <!-- LEFT: Agent Builder & Scenario -->
+            <div>
+                <div class="panel">
+                    <h2>👥 Agents</h2>
+                    <div id="agents"></div>
+                    <button class="add-agent-btn" onclick="addAgent()">+ Add Agent</button>
+                </div>
+                
+                <div class="panel" style="margin-top: 1.5rem;">
+                    <h2>📝 Scenario</h2>
+                    <textarea id="scenario" rows="4" placeholder="Describe the situation...">A disagreement over who gets to use the playground swing first.</textarea>
+                    <button class="run-btn" id="runBtn" onclick="startSimulation()">▶️ Run Simulation</button>
+                </div>
+            </div>
+            
+            <!-- RIGHT: Conversation -->
+            <div class="panel">
+                <h2>💬 Conversation</h2>
+                <div class="conversation" id="conversation">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">💭</div>
+                        <p>Add some agents and click "Run Simulation" to start!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let archetypes = {};
+        let agents = [];
+        let ws = null;
+        
+        // Fetch archetypes on load
+        fetch('http://localhost:8000/archetypes')
+            .then(r => r.json())
+            .then(data => {
+                archetypes = data.archetypes;
+                initializeAgents();
+            })
+            .catch(() => {
+                // Fallback archetypes if backend not running
+                archetypes = {
+                    "bully": { "name": "The Bully", "role": "Dominant, aggressive", "personality": {"aggression": 9, "empathy": 2, "confidence": 10} },
+                    "shy_kid": { "name": "The Shy Kid", "role": "Timid, anxious", "personality": {"aggression": 1, "empathy": 9, "confidence": 2} },
+                    "mediator": { "name": "The Mediator", "role": "Diplomatic, problem-solver", "personality": {"aggression": 3, "empathy": 9, "confidence": 7} },
+                    "joker": { "name": "The Joker", "role": "Humorous, class clown", "personality": {"aggression": 4, "empathy": 6, "confidence": 8, "humor": 10} },
+                    "teacher": { "name": "The Teacher", "role": "Authoritative, instructive", "personality": {"aggression": 4, "empathy": 7, "confidence": 9} }
+                };
+                initializeAgents();
+            });
+        
+        function initializeAgents() {
+            agents = [
+                { id: 1, archetype: 'bully', name: 'The Bully' },
+                { id: 2, archetype: 'shy_kid', name: 'The Shy Kid' }
+            ];
+            renderAgents();
+        }
+        
+        function addAgent() {
+            agents.push({
+                id: Date.now(),
+                archetype: 'mediator',
+                name: 'New Agent'
+            });
+            renderAgents();
+        }
+        
+        function removeAgent(id) {
+            agents = agents.filter(a => a.id !== id);
+            renderAgents();
+        }
+        
+        function updateAgent(id, archetype) {
+            agents = agents.map(a => 
+                a.id === id ? { ...a, archetype, name: archetypes[archetype].name } : a
+            );
+            renderAgents();
+        }
+        
+        function renderAgents() {
+            const container = document.getElementById('agents');
+            container.innerHTML = agents.map(agent => {
+                const arch = archetypes[agent.archetype];
+                return `
+                    <div class="agent-card">
+                        <select onchange="updateAgent(${agent.id}, this.value)">
+                            ${Object.keys(archetypes).map(key => `
+                                <option value="${key}" ${agent.archetype === key ? 'selected' : ''}>
+                                    ${archetypes[key].name}
+                                </option>
+                            `).join('')}
+                        </select>
+                        <div class="agent-role">${arch.role}</div>
+                        <div class="personality-bars">
+                            ${Object.entries(arch.personality).map(([trait, value]) => `
+                                <div class="personality-bar">
+                                    <span class="bar-label">${trait}</span>
+                                    <div class="bar-bg">
+                                        <div class="bar-fill" style="width: ${value * 10}%"></div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <button class="remove-btn" onclick="removeAgent(${agent.id})">Remove</button>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function startSimulation() {
+            const scenario = document.getElementById('scenario').value;
+            const conversation = document.getElementById('conversation');
+            const runBtn = document.getElementById('runBtn');
+            
+            // Clear conversation
+            conversation.innerHTML = '';
+            runBtn.disabled = true;
+            runBtn.textContent = '⏸️ Running...';
+            
+            // Connect WebSocket
+            ws = new WebSocket('ws://localhost:8000/ws/simulate');
+            
+            ws.onopen = () => {
+                ws.send(JSON.stringify({
+                    agents: agents,
+                    scenario: scenario,
+                    max_turns: 15
+                }));
+            };
+            
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                
+                if (data.type === 'turn') {
+                    const msg = `
+                        <div class="message">
+                            <div class="message-header">
+                                <div class="avatar ${data.data.archetype}">${data.data.agent[0]}</div>
+                                <span class="agent-name">${data.data.agent}</span>
+                            </div>
+                            <div class="message-content">${data.data.message}</div>
+                        </div>
+                    `;
+                    conversation.innerHTML += msg;
+                    conversation.scrollTop = conversation.scrollHeight;
+                } else if (data.type === 'complete') {
+                    runBtn.disabled = false;
+                    runBtn.textContent = '▶️ Run Again';
+                    ws.close();
+                }
+            };
+            
+            ws.onerror = () => {
+                runBtn.disabled = false;
+                runBtn.textContent = '▶️ Run Simulation';
+                conversation.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">⚠️</div>
+                        <p>Could not connect to backend. Make sure the server is running on port 8000.</p>
+                    </div>
+                `;
+            };
+        }
+    </script>
+</body>
+</html>
+

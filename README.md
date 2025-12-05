@@ -4,9 +4,9 @@
 
 ### *Real-world examples for [Universal Agent Nexus](https://github.com/mjdevaccount/universal_agent_nexus)*
 
-**Learn by doing: content moderation, data pipelines, chatbots, research assistants, and migration guides.**
+**Learn by doing: content moderation, data pipelines, chatbots, research assistants, interactive playground, and migration guides.**
 
-[![Examples](https://img.shields.io/badge/examples-5-blue.svg)](.)
+[![Examples](https://img.shields.io/badge/examples-6-blue.svg)](.)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 </div>
@@ -100,6 +100,29 @@ Analyze documents, extract insights, and generate summaries.
 - ✅ Citation tracking
 
 **Perfect for:** Research, document processing, knowledge management
+
+---
+
+### **6. Interactive Agent Playground** ([06-playground-simulation/](06-playground-simulation/)) 🎮
+**Watch Agents Interact in Real-Time**
+
+Build agents with different personalities (bully, shy kid, mediator, joker, teacher) and watch them have conversations.
+
+- ✅ 5 pre-built archetypes with personality traits
+- ✅ Real-time conversation simulation
+- ✅ Custom scenario support
+- ✅ Visual personality bars
+- ✅ WebSocket streaming
+
+**Perfect for:** Learning multi-agent systems, LLM prompt engineering, educational demos
+
+**Try it:**
+```bash
+cd 06-playground-simulation
+export OPENAI_API_KEY=sk-...
+uvicorn backend/main:app
+# Open frontend/index.html
+```
 
 ---
 
