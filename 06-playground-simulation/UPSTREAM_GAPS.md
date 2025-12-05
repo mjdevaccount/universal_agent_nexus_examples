@@ -7,10 +7,19 @@
 ## 📦 Current Versions
 
 ```bash
-pip install universal-agent-nexus>=1.0.2
-pip install universal-agent-arch>=0.2.0
-pip install universal-agent-fabric>=0.1.1
+pip install universal-agent-nexus==1.0.3
+pip install universal-agent-arch==0.2.0
+pip install universal-agent-fabric==0.1.1
 ```
+
+### Changelog
+
+| Version | Changes |
+|---------|---------|
+| **nexus 1.0.3** | Fix PolicyAction lowercase values (allow, deny, require_approval) |
+| nexus 1.0.2 | Add bridges module |
+| nexus 1.0.1 | Fix universal-agent-arch integration |
+| arch 0.2.0 | Add policy injection to handlers |
 
 ---
 
