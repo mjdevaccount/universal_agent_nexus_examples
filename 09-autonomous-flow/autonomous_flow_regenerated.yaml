@@ -1,0 +1,358 @@
+name: autonomous_flow
+version: 1.0.0
+description: Autonomous agent that discovers tools and regenerates workflows dynamically
+discovery:
+  mcp_servers:
+  - name: filesystem
+    url: http://localhost:8000/mcp
+  - name: git
+    url: http://localhost:8001/mcp
+  auto_discover: true
+graphs:
+- name: main
+  entry_node: agent
+  nodes:
+  - id: agent
+    kind: router
+    label: Autonomous Agent
+    config:
+      llm: qwen2.5-coder:14b
+      system_message: 'You are an autonomous agent that can discover, plan, and execute
+        tasks using available tools.
+
+        You have access to GitHub, Qdrant, filesystem, and Git tools.
+
+        When given a task, you should:
+
+        1. Understand what needs to be done
+
+        2. Use tools to gather information
+
+        3. Plan your approach
+
+        4. Execute using the appropriate tools
+
+        5. Verify results and provide summaries
+
+
+        You can use multiple tools in sequence to accomplish complex tasks.
+
+        Think step by step and use tools as needed.
+
+        '
+  - id: tools
+    kind: tool
+    label: Execute Tool
+    config:
+      tool_selection: auto
+  edges:
+  - from_node: agent
+    to_node: tools
+    condition:
+      expression: has_tool_calls == true
+  - from_node: tools
+    to_node: agent
+  - from_node: agent
+    to_node: end
+    condition:
+      expression: has_tool_calls == false AND task_complete == true
+tools:
+- name: read_file
+  description: Read contents of a file
+  protocol: mcp
+  mcp_server: filesystem
+  config:
+    server_url: http://localhost:8000/mcp
+    tool_name: read_file
+    input_schema:
+      type: object
+      properties:
+        path:
+          type: string
+          description: Path to file to read
+      required:
+      - path
+- name: write_file
+  description: Write content to a file
+  protocol: mcp
+  mcp_server: filesystem
+  config:
+    server_url: http://localhost:8000/mcp
+    tool_name: write_file
+    input_schema:
+      type: object
+      properties:
+        path:
+          type: string
+          description: Path to file
+        content:
+          type: string
+          description: Content to write
+      required:
+      - path
+      - content
+- name: list_directory
+  description: List files in a directory
+  protocol: mcp
+  mcp_server: filesystem
+  config:
+    server_url: http://localhost:8000/mcp
+    tool_name: list_directory
+    input_schema:
+      type: object
+      properties:
+        path:
+          type: string
+          description: Directory path
+          default: .
+- name: search_code
+  description: Search for code patterns
+  protocol: mcp
+  mcp_server: filesystem
+  config:
+    server_url: http://localhost:8000/mcp
+    tool_name: search_code
+    input_schema:
+      type: object
+      properties:
+        pattern:
+          type: string
+          description: Regex pattern
+        directory:
+          type: string
+          description: Directory to search
+          default: .
+      required:
+      - pattern
+- name: git_status
+  description: Get Git repository status
+  protocol: mcp
+  mcp_server: git
+  config:
+    server_url: http://localhost:8001/mcp
+    tool_name: git_status
+    input_schema:
+      type: object
+      properties:
+        repo_path:
+          type: string
+          description: Path to Git repository
+          default: .
+- name: git_commit
+  description: Create a Git commit
+  protocol: mcp
+  mcp_server: git
+  config:
+    server_url: http://localhost:8001/mcp
+    tool_name: git_commit
+    input_schema:
+      type: object
+      properties:
+        repo_path:
+          type: string
+          description: Path to Git repository
+          default: .
+        message:
+          type: string
+          description: Commit message
+      required:
+      - message
+- name: git_diff
+  description: Get Git diff of changes
+  protocol: mcp
+  mcp_server: git
+  config:
+    server_url: http://localhost:8001/mcp
+    tool_name: git_diff
+    input_schema:
+      type: object
+      properties:
+        repo_path:
+          type: string
+          description: Path to Git repository
+          default: .
+- name: chunk_and_store_python
+  description: Chunk a Python file using AST parsing and store in Qdrant
+  protocol: mcp
+  mcp_server: qdrant
+  config:
+    server_url: http://localhost:8002/mcp
+    tool_name: chunk_and_store_python
+    input_schema:
+      type: object
+      properties:
+        file_path:
+          type: string
+          description: Path to Python file
+        collection_name:
+          type: string
+          description: Qdrant collection name
+        context_id:
+          type: string
+          description: Unique context ID for storage isolation
+      required:
+      - file_path
+- name: store_text
+  description: Store text in Qdrant vector database
+  protocol: mcp
+  mcp_server: qdrant
+  config:
+    server_url: http://localhost:8002/mcp
+    tool_name: store_text
+    input_schema:
+      type: object
+      properties:
+        text:
+          type: string
+          description: Text to store
+        collection_name:
+          type: string
+          description: Qdrant collection name
+        context_id:
+          type: string
+          description: Unique context ID
+      required:
+      - text
+- name: search_qdrant
+  description: Search Qdrant vector database
+  protocol: mcp
+  mcp_server: qdrant
+  config:
+    server_url: http://localhost:8002/mcp
+    tool_name: search_qdrant
+    input_schema:
+      type: object
+      properties:
+        query:
+          type: string
+          description: Search query
+        collection_name:
+          type: string
+          description: Collection to search
+        limit:
+          type: integer
+          description: Max results
+          default: 10
+        context_id:
+          type: string
+          description: Context ID
+      required:
+      - query
+- name: list_collections
+  description: List all Qdrant collections
+  protocol: mcp
+  mcp_server: qdrant
+  config:
+    server_url: http://localhost:8002/mcp
+    tool_name: list_collections
+    input_schema:
+      type: object
+      properties: {}
+- name: github_get_file
+  description: Get file contents from GitHub repository
+  protocol: mcp
+  mcp_server: github
+  config:
+    server_url: http://localhost:8003/mcp
+    tool_name: github_get_file
+    input_schema:
+      type: object
+      properties:
+        repo:
+          type: string
+          description: Repository in format owner/repo
+        path:
+          type: string
+          description: File path in repository
+        branch:
+          type: string
+          description: Branch name
+          default: main
+      required:
+      - repo
+      - path
+- name: github_list_files
+  description: List files in a GitHub repository directory
+  protocol: mcp
+  mcp_server: github
+  config:
+    server_url: http://localhost:8003/mcp
+    tool_name: github_list_files
+    input_schema:
+      type: object
+      properties:
+        repo:
+          type: string
+          description: Repository in format owner/repo
+        path:
+          type: string
+          description: Directory path
+          default: ''
+        branch:
+          type: string
+          description: Branch name
+          default: main
+      required:
+      - repo
+- name: github_create_issue
+  description: Create a GitHub issue
+  protocol: mcp
+  mcp_server: github
+  config:
+    server_url: http://localhost:8003/mcp
+    tool_name: github_create_issue
+    input_schema:
+      type: object
+      properties:
+        repo:
+          type: string
+          description: Repository in format owner/repo
+        title:
+          type: string
+          description: Issue title
+        body:
+          type: string
+          description: Issue body
+      required:
+      - repo
+      - title
+- name: github_list_issues
+  description: List issues in a GitHub repository
+  protocol: mcp
+  mcp_server: github
+  config:
+    server_url: http://localhost:8003/mcp
+    tool_name: github_list_issues
+    input_schema:
+      type: object
+      properties:
+        repo:
+          type: string
+          description: Repository in format owner/repo
+        state:
+          type: string
+          description: Issue state (open/closed/all)
+          default: open
+      required:
+      - repo
+- name: github_search_repos
+  description: Search GitHub repositories
+  protocol: mcp
+  mcp_server: github
+  config:
+    server_url: http://localhost:8003/mcp
+    tool_name: github_search_repos
+    input_schema:
+      type: object
+      properties:
+        query:
+          type: string
+          description: Search query
+      required:
+      - query
+routers:
+- name: tool_planner
+  llm_provider: ollama
+  model: qwen2.5-coder:14b
+  system_message: Plan which tools to use based on available capabilities
+policies: []

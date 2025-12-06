@@ -60,12 +60,13 @@ class MCPToolLoader:
             
             for tool_def in tools_data.get("tools", []):
                 # Create LangChain tool from MCP tool definition
+                # NOTE: Parameter order matches __init__: server_url, tool_name, input_schema, name, description
                 tool = MCPTool(
-                    name=tool_def["name"],
-                    description=tool_def.get("description", ""),
                     server_url=server_url,
                     tool_name=tool_def["name"],
-                    input_schema=tool_def.get("inputSchema", {})
+                    input_schema=tool_def.get("inputSchema", {}),
+                    name=tool_def["name"],
+                    description=tool_def.get("description", "")
                 )
                 tools.append(tool)
             
@@ -80,13 +81,36 @@ class MCPTool(BaseTool):
     """LangChain tool wrapper for MCP tools."""
     
     def __init__(self, server_url: str, tool_name: str, input_schema: dict, name: str = None, description: str = ""):
-        # Store MCP-specific attributes
-        self._server_url = server_url
-        self._tool_name = tool_name
-        self._input_schema = input_schema
+        # CRITICAL: BaseTool needs args_schema for Ollama tool calling
+        # Convert MCP inputSchema to Pydantic model for LangChain
+        from pydantic import create_model, BaseModel
+        from typing import get_type_hints
         
-        # Call parent with only BaseTool-compatible fields
-        super().__init__(name=name or tool_name, description=description)
+        # Create args_schema from input_schema
+        args_schema = None
+        if input_schema and input_schema.get("properties"):
+            # Create a Pydantic model from the JSON schema
+            fields = {}
+            for prop_name, prop_def in input_schema.get("properties", {}).items():
+                prop_type = str  # Default to str
+                if prop_def.get("type") == "integer":
+                    prop_type = int
+                elif prop_def.get("type") == "boolean":
+                    prop_type = bool
+                fields[prop_name] = (prop_type, ...)
+            
+            if fields:
+                ArgsModel = create_model(f"{tool_name}_Args", **fields)
+                args_schema = ArgsModel
+        
+        # Call parent first (Pydantic models need this)
+        super().__init__(name=name or tool_name, description=description, args_schema=args_schema)
+        
+        # Store MCP-specific attributes AFTER super().__init__()
+        # Use object.__setattr__ to bypass Pydantic's attribute handling
+        object.__setattr__(self, '_server_url', server_url)
+        object.__setattr__(self, '_tool_name', tool_name)
+        object.__setattr__(self, '_input_schema', input_schema)
     
     def _run(self, **kwargs) -> str:
         """Execute MCP tool via HTTP."""
@@ -120,36 +144,105 @@ class MCPTool(BaseTool):
 
 # ===== LLM SETUP =====
 
-def create_llm_with_tools(tools: list[BaseTool], model: str = "gemma:2b-instruct"):
+def create_llm_with_tools(tools: list[BaseTool], model: str = "qwen2.5-coder:14b"):
     """
     Create Ollama LLM with function calling support.
     
-    December 2025: Ollama models support native function calling.
-    Note: Not all models support bind_tools - use manual tool calling if needed.
+    CRITICAL FIX: Use ChatOpenAI with Ollama's OpenAI-compatible API
+    LangChain's ChatOllama doesn't properly parse tool calls from Ollama's native API.
+    Using ChatOpenAI with Ollama's /v1 endpoint fixes this parsing issue.
     """
     try:
-        from langchain_ollama import ChatOllama
+        # Use ChatOpenAI with Ollama's OpenAI-compatible API
+        # This properly parses tool calls that ChatOllama misses
+        from langchain_openai import ChatOpenAI
         
-        llm = ChatOllama(
+        llm = ChatOpenAI(
             model=model,
-            temperature=0.7,
+            base_url="http://localhost:11434/v1",  # Ollama's OpenAI-compatible API
+            api_key="ollama",  # Dummy key (Ollama doesn't require auth)
+            temperature=0,
         )
         
-        # Try to bind tools (some models don't support it)
+        # Try to bind tools
         if tools:
             try:
                 llm_with_tools = llm.bind_tools(tools)
+                print(f"✅ Tools bound successfully to {model} via OpenAI-compatible API")
                 return llm_with_tools, tools
             except Exception as e:
-                print(f"Warning: Model {model} doesn't support bind_tools: {e}")
-                print("Using LLM without tool binding (manual tool calling)")
+                print(f"⚠️  Warning: bind_tools failed: {e}")
+                print("   Using LLM without tool binding (manual tool calling)")
                 return llm, tools
         else:
             return llm, []
             
     except ImportError:
-        print("Warning: langchain-ollama not installed, using mock LLM")
-        return None, tools
+        print("❌ ERROR: langchain-openai not installed")
+        print("   Install with: pip install langchain-openai")
+        # Fallback to ChatOllama if ChatOpenAI not available
+        try:
+            from langchain_ollama import ChatOllama
+            llm = ChatOllama(model=model, temperature=0)
+            if tools:
+                llm_with_tools = llm.bind_tools(tools)
+                return llm_with_tools, tools
+            return llm, []
+        except:
+            return None, tools
+
+
+def parse_tool_calls_from_content(content: str, tools: list[BaseTool]) -> list:
+    """
+    Parse tool calls from JSON content when Ollama returns them in content field.
+    
+    Ollama's /v1 API sometimes returns tool calls as JSON in content instead of
+    the standard tool_calls array. This function extracts and converts them.
+    """
+    import json
+    import re
+    
+    if not content or not isinstance(content, str):
+        return []
+    
+    # Try to parse as JSON directly
+    try:
+        tool_call_data = json.loads(content.strip())
+        if isinstance(tool_call_data, dict) and "name" in tool_call_data:
+            # Found a tool call in JSON format
+            tool_name = tool_call_data.get("name")
+            tool_args = tool_call_data.get("arguments", {})
+            
+            # Find the tool to get its ID
+            tool = next((t for t in tools if t.name == tool_name), None)
+            if tool:
+                return [{
+                    "name": tool_name,
+                    "args": tool_args,
+                    "id": f"call_{tool_name}_{hash(str(tool_args))}"
+                }]
+    except (json.JSONDecodeError, AttributeError):
+        pass
+    
+    # Try to find JSON in content (might be mixed with text)
+    json_match = re.search(r'\{[^{}]*"name"[^{}]*\}', content)
+    if json_match:
+        try:
+            tool_call_data = json.loads(json_match.group(0))
+            if isinstance(tool_call_data, dict) and "name" in tool_call_data:
+                tool_name = tool_call_data.get("name")
+                tool_args = tool_call_data.get("arguments", {})
+                tool = next((t for t in tools if t.name == tool_name), None)
+                if tool:
+                    return [{
+                        "name": tool_name,
+                        "args": tool_args,
+                        "id": f"call_{tool_name}_{hash(str(tool_args))}"
+                    }]
+        except (json.JSONDecodeError, AttributeError):
+            pass
+    
+    return []
 
 
 # ===== LANGGRAPH NODES =====
@@ -181,8 +274,20 @@ def agent_node(state: AgentState, llm, tools: list[BaseTool]):
         if hasattr(response, "tool_calls") and response.tool_calls:
             return {"messages": [response]}
         
-        # If no tool calls, check if we should call tools manually
-        # For models without bind_tools support, we'll just return the response
+        # CRITICAL FIX: Parse tool calls from content if Ollama returned them as JSON
+        # Ollama's /v1 API sometimes returns tool calls in content instead of tool_calls
+        if hasattr(response, "content") and response.content:
+            parsed_tool_calls = parse_tool_calls_from_content(response.content, tools)
+            if parsed_tool_calls:
+                # Create new AIMessage with tool_calls
+                from langchain_core.messages import AIMessage
+                response_with_tools = AIMessage(
+                    content=response.content,  # Keep original content
+                    tool_calls=parsed_tool_calls
+                )
+                return {"messages": [response_with_tools]}
+        
+        # If no tool calls, return the response as-is
         return {"messages": [response]}
         
     except Exception as e:
@@ -212,8 +317,21 @@ def tool_node(state: AgentState, tools: list[BaseTool]):
             tool = next((t for t in tools if t.name == tool_name), None)
             
             if tool:
+                # Verify tool has required attributes
+                if not hasattr(tool, '_server_url'):
+                    tool_messages.append(
+                        ToolMessage(
+                            content=f"Error: Tool {tool_name} missing _server_url attribute. Tool type: {type(tool).__name__}",
+                            tool_call_id=tool_id
+                        )
+                    )
+                    continue
+                
                 # Execute tool
-                result = tool._run(**tool_args)
+                try:
+                    result = tool._run(**tool_args)
+                except Exception as e:
+                    result = f"Error executing tool: {str(e)}"
                 
                 tool_messages.append(
                     ToolMessage(

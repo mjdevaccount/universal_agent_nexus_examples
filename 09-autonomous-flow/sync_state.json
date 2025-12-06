@@ -1,0 +1,1408 @@
+{
+  "repos": {
+    "mjdevaccount/universal_agent_nexus": {
+      "files": {
+        ".github/workflows/publish.yml": {
+          "github_sha": "565fc4af59e3b56a011cb9facb05e16443b10e72",
+          "chunks": 3,
+          "synced_at": "2025-12-06T03:59:10.326824Z"
+        },
+        ".github/workflows/test.yml": {
+          "github_sha": "cabb8eaaaf6c334f20c8c5795d9df4f54591669d",
+          "chunks": 3,
+          "synced_at": "2025-12-06T03:59:11.411144Z"
+        },
+        "CHANGELOG.md": {
+          "github_sha": "8ba14a20b0a45f576c2553e8a8f16d5455c7570c",
+          "chunks": 16,
+          "synced_at": "2025-12-06T03:59:12.716171Z"
+        },
+        "README.md": {
+          "github_sha": "6aa6e615985f95d9c8ad74621ee46ba6796d775a",
+          "chunks": 110,
+          "synced_at": "2025-12-06T03:59:13.849329Z"
+        },
+        "adapters/__init__.py": {
+          "github_sha": "851164237caba265e8624c8762e5f7141a11e700",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:14.899993Z"
+        },
+        "adapters/aws/__init__.py": {
+          "github_sha": "21e456645153d69ae5360db6cd781f0bf37da0b1",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:15.934102Z"
+        },
+        "adapters/aws/bedrock.py": {
+          "github_sha": "e02ab9a61d785bf4f65cd4994aa1508df719b318",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:16.993245Z"
+        },
+        "adapters/aws/dynamodb.py": {
+          "github_sha": "82006eef8a7f27b4149dd6c292e4c0df75c22ede",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:18.024799Z"
+        },
+        "adapters/aws/lambda_handler.py": {
+          "github_sha": "7e4b969bb356247e0c34e414faaf4057c86f0f73",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:19.042062Z"
+        },
+        "adapters/aws/sqs.py": {
+          "github_sha": "638d8749163aee77fdc4d8a4a6b069ae69ae61b3",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:20.048663Z"
+        },
+        "adapters/aws/step_functions.py": {
+          "github_sha": "d5774cf2bcdbcbddeaa370ea3c74b0e011ca2a44",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:21.431369Z"
+        },
+        "adapters/kubernetes/__init__.py": {
+          "github_sha": "c2d7908c73d5d4dd9fe6314be89541a5e088a756",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:22.439959Z"
+        },
+        "adapters/kubernetes/crd.yaml": {
+          "github_sha": "12868ed3308342d04a01e21cda50aba4a98ecd13",
+          "chunks": 4,
+          "synced_at": "2025-12-06T03:59:23.645139Z"
+        },
+        "adapters/kubernetes/operator.py": {
+          "github_sha": "bc50e57d7ca81173190da7172e560cb80171b9f4",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:24.848561Z"
+        },
+        "adapters/kubernetes/reconciler.py": {
+          "github_sha": "2d9cb61ebc823d3c2e55ac46100d6d197500ea00",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:25.981672Z"
+        },
+        "adapters/langgraph/__init__.py": {
+          "github_sha": "c1f0b9d5bfe512c01e798110edc3c9d5571a7a26",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:27.035954Z"
+        },
+        "adapters/langgraph/checkpointer.py": {
+          "github_sha": "8dbebac9870934cdc0fd782b534dfc68db6eb272",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:28.182169Z"
+        },
+        "adapters/langgraph/compiler.py": {
+          "github_sha": "2380e0eeb312b7c27908d0da4cfeacb63fb55ab7",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:29.472562Z"
+        },
+        "adapters/langgraph/runtime.py": {
+          "github_sha": "526ba221bc267bf2a8f8706fae3106e7f0d9f9b7",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:30.769112Z"
+        },
+        "adapters/langgraph/tools.py": {
+          "github_sha": "b39dc344db7eaf78e325818e4cc06e0d867c04d8",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:31.909979Z"
+        },
+        "adapters/mcp/__init__.py": {
+          "github_sha": "8f3703f63c501eedea990cdaa9ee56d52dc491ec",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:33.060589Z"
+        },
+        "adapters/mcp/client.py": {
+          "github_sha": "4e9e4937dcd4fcbfafb37c058c6492cf07e4fb82",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:34.259005Z"
+        },
+        "adapters/mcp/schema.py": {
+          "github_sha": "de6eec5c42be11c0a0344d66da4c1ec5a321a7f7",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:35.506789Z"
+        },
+        "adapters/mcp/server.py": {
+          "github_sha": "9c631f5b9ceb5f98a8a418292ac3a58e6e53e17a",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:36.630168Z"
+        },
+        "adapters/mcp/transport.py": {
+          "github_sha": "23b09fd9f56d20274225b03cdc17b321a06ea38b",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:37.890130Z"
+        },
+        "adapters/openai/__init__.py": {
+          "github_sha": "653cac76d5bad827de66f4ffc163e9955cde598a",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:38.924509Z"
+        },
+        "adapters/openai/assistant.py": {
+          "github_sha": "b30818647618da3f9d2f139182b7e331ed50a58a",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:40.096312Z"
+        },
+        "adapters/openai/threads.py": {
+          "github_sha": "9f1479f7cb0864598eae157d2874951fbe32b4e2",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:41.292892Z"
+        },
+        "adapters/openai/tools.py": {
+          "github_sha": "e5690ed941b3f4249c558b8ba7ad8596f3b0b6a0",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:42.573780Z"
+        },
+        "adapters/temporal/__init__.py": {
+          "github_sha": "012688af3e6850ec4a2464bc84f82aa6f89799d4",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:43.656242Z"
+        },
+        "adapters/temporal/activities.py": {
+          "github_sha": "36c57343904054ce093ae611394baf8713129568",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:44.817329Z"
+        },
+        "adapters/temporal/worker.py": {
+          "github_sha": "110ff28746ec210b34c613e8916f5da7d1c12042",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:45.856893Z"
+        },
+        "adapters/temporal/workflow.py": {
+          "github_sha": "e2ae5266f47b807f36fe079162e4998cc3ced95e",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:46.882880Z"
+        },
+        "bridges/__init__.py": {
+          "github_sha": "30f9fc83fa824c329d11305b6ea59ea7222c8892",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:47.939696Z"
+        },
+        "bridges/aws_to_temporal.py": {
+          "github_sha": "53b62d795675be47f1783adff59093259cf649b5",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:49.242890Z"
+        },
+        "bridges/langgraph_to_mcp.py": {
+          "github_sha": "d8fd994287b76db4b3aafa8d1552902550012d28",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:50.252209Z"
+        },
+        "bridges/universal_state.py": {
+          "github_sha": "1455289d20e6472524f9257e05460490bb82a667",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:51.448690Z"
+        },
+        "cli/__init__.py": {
+          "github_sha": "f95791e6dc09d3540f51715bde0be503859199dc",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:52.720010Z"
+        },
+        "cli/compile.py": {
+          "github_sha": "0e0b4ac89234862febe6f2a13d84f014e646d791",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:53.998742Z"
+        },
+        "cli/deploy.py": {
+          "github_sha": "b40a56778ce718680c967a1ead3caab43e751539",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:55.148219Z"
+        },
+        "cli/migrate.py": {
+          "github_sha": "5b71ceb7a9876f2069e76e981afb36123ad39a5d",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:56.329790Z"
+        },
+        "cli/validate.py": {
+          "github_sha": "7660d762ef6f71cb9f1caa85f7214d97b48b1eb1",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:57.542434Z"
+        },
+        "docs/adapters/aws.md": {
+          "github_sha": "a6b8a4010811358fad36d7ceeaaddadfa0c3f00c",
+          "chunks": 1,
+          "synced_at": "2025-12-06T03:59:58.760262Z"
+        },
+        "docs/adapters/custom_adapter.md": {
+          "github_sha": "b7d6532fe5a4339d6c94b7d04d44c181380370bd",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:00.178663Z"
+        },
+        "docs/adapters/langgraph.md": {
+          "github_sha": "f8cf32386c49e4392c35542851f994a62a1209fa",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:01.265857Z"
+        },
+        "docs/adapters/mcp.md": {
+          "github_sha": "f17e02dfe0236920918b9a50ac7fcd71a605d4c7",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:02.421571Z"
+        },
+        "docs/deployment/aws_production.md": {
+          "github_sha": "e703ed8abade59e5f0df0bafa824980a6edf9185",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:03.641159Z"
+        },
+        "docs/deployment/kubernetes.md": {
+          "github_sha": "7c4c042e118367b5924065dcd38f3bfb1656224a",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:04.826238Z"
+        },
+        "docs/deployment/serverless.md": {
+          "github_sha": "b5aca1bc1a270b0283b5172b8649c10516afe64a",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:05.992077Z"
+        },
+        "docs/migration/custom_to_nexus.md": {
+          "github_sha": "b376253d33631e113a767276107b882be57c126e",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:07.520158Z"
+        },
+        "docs/migration/langgraph_to_aws.md": {
+          "github_sha": "8e23f274f4671c4ec7e8f642252939c73ffacd0c",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:08.592013Z"
+        },
+        "docs/protocols/monitoring.md": {
+          "github_sha": "28c9e9de01a13a190dde6f210af17ff9566c70df",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:09.816090Z"
+        },
+        "docs/protocols/opentelemetry.md": {
+          "github_sha": "65ee5aab55388cb271cebc1c278710d3582bda39",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:10.902102Z"
+        },
+        "examples/aws_production/README.md": {
+          "github_sha": "a087e6eed96c56855fed39dccaaeebfc9df3adf5",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:12.097075Z"
+        },
+        "examples/aws_production/deploy.sh": {
+          "github_sha": "672f27c36e8f82a8a1443fb4db0e6755acad51fa",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:13.147395Z"
+        },
+        "examples/aws_production/manifest.yaml": {
+          "github_sha": "af17deb4382dc2d2c726b7b8723924bd68a91147",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:14.566608Z"
+        },
+        "examples/hello_langgraph/README.md": {
+          "github_sha": "337c1e1f60273adfabf33f7db88a7f73c426fdf8",
+          "chunks": 2,
+          "synced_at": "2025-12-06T04:00:15.903799Z"
+        },
+        "examples/hello_langgraph/manifest.yaml": {
+          "github_sha": "a1924df63095f9adabac8cf8e3da79e2dc07f873",
+          "chunks": 5,
+          "synced_at": "2025-12-06T04:00:16.968725Z"
+        },
+        "examples/hello_langgraph/run.py": {
+          "github_sha": "2cf2cfdf5a7ccffcf10b69405258c29b3da27a87",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:18.108289Z"
+        },
+        "examples/hello_langgraph/run_with_mcp.py": {
+          "github_sha": "de3fd9352b834d47bad225f183d1f1814c5dbf96",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:19.214971Z"
+        },
+        "examples/hello_langgraph/run_with_otel.py": {
+          "github_sha": "bfe22ef58a4081459b11642674f09714e5c07d11",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:20.389384Z"
+        },
+        "examples/hello_mcp/README.md": {
+          "github_sha": "13141f602cb9e210f3af23a98644ff943282e3f2",
+          "chunks": 6,
+          "synced_at": "2025-12-06T04:00:21.441803Z"
+        },
+        "examples/hello_mcp/run_mcp_server.py": {
+          "github_sha": "aff8b2db0a2d1e023078d1fcbfcfe032f68d50d8",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:22.698298Z"
+        },
+        "examples/mcp_server/README.md": {
+          "github_sha": "a950f30045ef2fead85bf54d8444eb1bdf68c2ef",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:23.947272Z"
+        },
+        "examples/mcp_server/manifest.yaml": {
+          "github_sha": "dadd503b568d0f91630c9f6b46a7a1bd2ddd7a66",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:25.149222Z"
+        },
+        "examples/mcp_server/server.py": {
+          "github_sha": "27a3dbb55f6c852bc7be1460c6aeb9c5d674d7c3",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:26.157196Z"
+        },
+        "examples/multi_cloud/README.md": {
+          "github_sha": "66ba0db4ae2695841a8faa1e9db05a75bb921b26",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:27.331954Z"
+        },
+        "examples/multi_cloud/aws_config.yaml": {
+          "github_sha": "bfc3ab4a7588a401f9e29f45aebffb9aa904f2e7",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:29.230667Z"
+        },
+        "examples/multi_cloud/gcp_config.yaml": {
+          "github_sha": "aa3e8a6672ce49e522ca6cb30a51931a65733091",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:30.419770Z"
+        },
+        "examples/multi_cloud/manifest.yaml": {
+          "github_sha": "5057ef25d1dcb20afdfb60a9f4a039278ee930d0",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:31.914743Z"
+        },
+        "infra/docker/docker-compose.yml": {
+          "github_sha": "681c6baa272943ded57c77d1b09918d3a5cca2a4",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:33.199173Z"
+        },
+        "infra/kubernetes/deployment.yaml": {
+          "github_sha": "8daa09fb5b20b71e1f51bd0d72fb40d062d7be1b",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:34.618902Z"
+        },
+        "infra/kubernetes/operator.yaml": {
+          "github_sha": "82eb311aa5c08b581db2bb670ac4180d3a046f43",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:35.840126Z"
+        },
+        "infra/kubernetes/rbac.yaml": {
+          "github_sha": "a00d1933db643bc7d9200fdee272f2b17bae73b5",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:36.932750Z"
+        },
+        "lambda/tool_processor/main.py": {
+          "github_sha": "625833262447f27123201ecae3ef76e67a283040",
+          "chunks": 8,
+          "synced_at": "2025-12-06T04:00:37.987933Z"
+        },
+        "protocols/__init__.py": {
+          "github_sha": "934c897c53a63f327650ea0ec7343e0d23e14bba",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:39.138191Z"
+        },
+        "protocols/cloudwatch.py": {
+          "github_sha": "2ab74dd70a5aa5a7f3078eac9775442029e6f454",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:40.482034Z"
+        },
+        "protocols/jaeger.py": {
+          "github_sha": "42bfdf592011a34fd9dfe7cb30d78ecd6e324804",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:41.800573Z"
+        },
+        "protocols/otel.py": {
+          "github_sha": "6ad4b90d2f267da50dcbb25e89ba4df47ea17200",
+          "chunks": 2,
+          "synced_at": "2025-12-06T04:00:42.961909Z"
+        },
+        "protocols/prometheus.py": {
+          "github_sha": "f3dad816d3791a477db0a947ced968c87298e6bd",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:44.029323Z"
+        },
+        "pyproject.toml": {
+          "github_sha": "597e0f46f19879f629f52f8523f5b20e8aac44df",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:45.095042Z"
+        },
+        "registry/__init__.py": {
+          "github_sha": "ef2a65b8efb777f096a651d5a711d001b1be2ae0",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:46.383963Z"
+        },
+        "registry/catalog.py": {
+          "github_sha": "cc795a4a306ae544d4451ecfcdf6af583c8c41a6",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:47.448911Z"
+        },
+        "registry/loader.py": {
+          "github_sha": "eb5b1fee7178b5f0aa89ed77320e3b48823751e9",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:48.714003Z"
+        },
+        "registry/validator.py": {
+          "github_sha": "510b330cfa57737546362608121f013f1ad26457",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:49.944557Z"
+        },
+        "terraform/README.md": {
+          "github_sha": "f2e12383b4989749b83eeb2269fd49430f24d1e3",
+          "chunks": 39,
+          "synced_at": "2025-12-06T04:00:51.219926Z"
+        },
+        "terraform/environments/dev/state_machine.json": {
+          "github_sha": "be21526a7a7298aa974c54068bd1940e30583fb1",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:52.301116Z"
+        },
+        "terraform/environments/prod/state_machine.json": {
+          "github_sha": "c8a3f6753c6702cc18485bc9ee1870feeddd6b9a",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:53.478424Z"
+        },
+        "terraform/scripts/compile-and-deploy.sh": {
+          "github_sha": "091fd055f8183214474d73b5e9cc131424a19bd3",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:54.574353Z"
+        },
+        "terraform/scripts/deploy.sh": {
+          "github_sha": "a37dae2570f3c12c3dccf41bd3fa96bf6c94aa1f",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:55.864706Z"
+        },
+        "terraform/scripts/test-lambda.sh": {
+          "github_sha": "0376b68cadff5761be510c17ab5ffbab28eaaabe",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:57.115991Z"
+        },
+        "tests/benchmarks/test_latency.py": {
+          "github_sha": "46c5932da7300afc6fb3b327441093a52a8e7df0",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:00:59.365425Z"
+        },
+        "tests/benchmarks/test_performance.py": {
+          "github_sha": "a1c346d0e325f9a011ffb09bba9280d2e680d1b0",
+          "chunks": 5,
+          "synced_at": "2025-12-06T04:01:00.645843Z"
+        },
+        "tests/benchmarks/test_throughput.py": {
+          "github_sha": "ee7e2e38bc5de232abaf252e4c78db00c2d174fc",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:01:01.778209Z"
+        },
+        "tests/bridges/__init__.py": {
+          "github_sha": "10951f0a188ecbc98d2bbf5c97a4bfda4602d961",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:01:02.835031Z"
+        },
+        "tests/bridges/test_fabric_to_arch.py": {
+          "github_sha": "18dbb93b6a1f976432c4fa6d379221db33b3e5e1",
+          "chunks": 8,
+          "synced_at": "2025-12-06T04:01:03.915900Z"
+        },
+        "tests/conformance/test_aws.py": {
+          "github_sha": "d0fbfaeceebb95600ef702b1bf97cab4337ac707",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:01:05.092383Z"
+        },
+        "tests/conformance/test_langgraph.py": {
+          "github_sha": "41761fd02cd570048ca9f0dd3085dbda247b3c00",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:01:06.308384Z"
+        },
+        "tests/conformance/test_langgraph_contract.py": {
+          "github_sha": "f3e6b58e52d991c698ce46378645c14dc819cb94",
+          "chunks": 2,
+          "synced_at": "2025-12-06T04:01:07.504278Z"
+        },
+        "tests/conformance/test_mcp.py": {
+          "github_sha": "1104804d7ac236c784c840b2ee010b2749bb0c77",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:01:08.855189Z"
+        },
+        "tests/conftest.py": {
+          "github_sha": "8d990c285e287a185a8d6e0236cabe3638001349",
+          "chunks": 4,
+          "synced_at": "2025-12-06T04:01:10.065275Z"
+        },
+        "tests/integration/__init__.py": {
+          "github_sha": "c2ec240f08b5911f1c9c9ab0cf7a25910153168c",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:01:11.284389Z"
+        },
+        "tests/integration/conftest.py": {
+          "github_sha": "910b3732531d915cfc966afb4572cd14637576d0",
+          "chunks": 5,
+          "synced_at": "2025-12-06T04:01:12.555482Z"
+        },
+        "tests/integration/test_aws_dynamodb.py": {
+          "github_sha": "cf658c58a5318a4c9c6cf1996e95798e07c8e406",
+          "chunks": 3,
+          "synced_at": "2025-12-06T04:01:13.713689Z"
+        },
+        "tests/integration/test_aws_e2e.py": {
+          "github_sha": "51d80805f6ea40888dbc4dd103a5047f8608986f",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:01:15.019258Z"
+        },
+        "tests/integration/test_cross_adapter.py": {
+          "github_sha": "10e3156ca6b9ed037bd9ba22d85b2e005e8d6099",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:01:16.281533Z"
+        },
+        "tests/integration/test_langgraph_e2e.py": {
+          "github_sha": "3f6ae6f26b9999b39ddaae1350acf1cc80edabb9",
+          "chunks": 3,
+          "synced_at": "2025-12-06T04:01:17.590048Z"
+        },
+        "tests/integration/test_langgraph_runtime.py": {
+          "github_sha": "c5e2d2ea687a30e3d32d04801f3a43bd2256b8eb",
+          "chunks": 5,
+          "synced_at": "2025-12-06T04:01:18.720931Z"
+        },
+        "tests/integration/test_mcp_server.py": {
+          "github_sha": "36f242a332db35d9217882c9077fd819a09332ed",
+          "chunks": 3,
+          "synced_at": "2025-12-06T04:01:19.951151Z"
+        },
+        "tests/unit/__init__.py": {
+          "github_sha": "8b55814ab1ebe89c0f3099686817b992c1a410c0",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:01:21.262322Z"
+        },
+        "tests/unit/test_aws_compiler.py": {
+          "github_sha": "9ecd38b857588969d13067d18bf412fd6cf40998",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:01:22.548355Z"
+        },
+        "tests/unit/test_ir_compiler.py": {
+          "github_sha": "1fa5e05325811c15db8e56a3cb9b3df376144fc4",
+          "chunks": 8,
+          "synced_at": "2025-12-06T04:01:23.830077Z"
+        },
+        "tests/unit/test_ir_validation.py": {
+          "github_sha": "cbf1182b6aafa6f35db27c9a26e86a54051b4cfd",
+          "chunks": 2,
+          "synced_at": "2025-12-06T04:01:25.020579Z"
+        },
+        "tests/unit/test_manifest_loading.py": {
+          "github_sha": "0b586ffa37fd61db0f94d6dcd53c99c3c8b33bb2",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:01:26.187532Z"
+        },
+        "tests/unit/test_mcp_server.py": {
+          "github_sha": "7aa752dc00a6fac87a8fc729eb3f64b4667436b2",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:01:27.380672Z"
+        },
+        "universal_agent_nexus/__init__.py": {
+          "github_sha": "af4e3a245a52b1dc2075407b1de115d61155041a",
+          "chunks": 2,
+          "synced_at": "2025-12-06T04:01:28.698583Z"
+        },
+        "universal_agent_nexus/adapters/__init__.py": {
+          "github_sha": "9ee2bf847e4a3f6c6a6cec66fc1da5007640b2ba",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:01:29.965195Z"
+        },
+        "universal_agent_nexus/adapters/aws/__init__.py": {
+          "github_sha": "ee6a759e064f173cd9a18e195b3d9d708fce6fbb",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:01:31.348917Z"
+        },
+        "universal_agent_nexus/adapters/aws/dynamodb_store.py": {
+          "github_sha": "451eee936d09d6ef8fd89f358d59578bde36a093",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:01:32.460565Z"
+        },
+        "universal_agent_nexus/adapters/aws/runtime.py": {
+          "github_sha": "e68859f4fd9dfb6bdf4e729058e6221b08407e04",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:01:33.711889Z"
+        },
+        "universal_agent_nexus/adapters/aws/step_functions.py": {
+          "github_sha": "4c1829d8a540c1f5786d4d9c8ee8ff94ecfe8bc3",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:01:34.958537Z"
+        },
+        "universal_agent_nexus/adapters/base.py": {
+          "github_sha": "b82ab735ffd760b2b4d77c6808cbc61f52a808b5",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:01:36.214924Z"
+        },
+        "universal_agent_nexus/adapters/langgraph/__init__.py": {
+          "github_sha": "d9e9f10eb9c3a016b90884f65ab9b739907868c8",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:01:37.494443Z"
+        },
+        "universal_agent_nexus/adapters/langgraph/compiler.py": {
+          "github_sha": "36e926fffb632939e3b43c29bb2b7699c1122767",
+          "chunks": 2,
+          "synced_at": "2025-12-06T04:01:38.762970Z"
+        },
+        "universal_agent_nexus/adapters/langgraph/runtime.py": {
+          "github_sha": "d6ed91d994a7c855199ac02473ae823058f6c164",
+          "chunks": 2,
+          "synced_at": "2025-12-06T04:01:39.988447Z"
+        },
+        "universal_agent_nexus/adapters/mcp/__init__.py": {
+          "github_sha": "14cbd206674e4c2b6176baccdcb2bc8a8fc15480",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:01:41.134342Z"
+        },
+        "universal_agent_nexus/adapters/mcp/server.py": {
+          "github_sha": "905764411e0e14ee68a6290ec5ff89e9489fa036",
+          "chunks": 3,
+          "synced_at": "2025-12-06T04:01:42.384630Z"
+        },
+        "universal_agent_nexus/bridges/__init__.py": {
+          "github_sha": "4fbf078a56ba882848c1ffd021dca5261e90ab1b",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:01:43.649218Z"
+        },
+        "universal_agent_nexus/bridges/fabric_to_arch.py": {
+          "github_sha": "abccb18e9138727052e9425d4eda88f913b52740",
+          "chunks": 5,
+          "synced_at": "2025-12-06T04:01:44.746931Z"
+        },
+        "universal_agent_nexus/cli/__init__.py": {
+          "github_sha": "de3b8bfdc39757b5ce67fdfe172dc247d1db95f0",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:01:45.966702Z"
+        },
+        "universal_agent_nexus/cli/compile.py": {
+          "github_sha": "f297d3bf4462f94f677742459d191bf6a44ca5d6",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:01:47.219816Z"
+        },
+        "universal_agent_nexus/cli/main.py": {
+          "github_sha": "355e4b1761897153fab9d9b3f967e36a2f483389",
+          "chunks": 5,
+          "synced_at": "2025-12-06T04:01:48.502481Z"
+        },
+        "universal_agent_nexus/compiler.py": {
+          "github_sha": "4d53e20a788d10cdeec114fe6fdbdac6dc90a2d6",
+          "chunks": 11,
+          "synced_at": "2025-12-06T04:01:49.671687Z"
+        },
+        "universal_agent_nexus/ir/__init__.py": {
+          "github_sha": "5933caa015c27d89c5d90e43752173b2650d835c",
+          "chunks": 12,
+          "synced_at": "2025-12-06T04:01:50.962560Z"
+        },
+        "universal_agent_nexus/ir/generator.py": {
+          "github_sha": "1238fc1c1d31a926e0aa44976f9a0a72c85681ea",
+          "chunks": 5,
+          "synced_at": "2025-12-06T04:01:52.040717Z"
+        },
+        "universal_agent_nexus/ir/parser.py": {
+          "github_sha": "640d0efc0fabc262e5986c099f27d45380115bfd",
+          "chunks": 7,
+          "synced_at": "2025-12-06T04:01:53.346287Z"
+        },
+        "universal_agent_nexus/ir/pass_manager.py": {
+          "github_sha": "86387f6021551ee79ad701e880998a76c44564c0",
+          "chunks": 5,
+          "synced_at": "2025-12-06T04:01:54.623785Z"
+        },
+        "universal_agent_nexus/ir/transforms.py": {
+          "github_sha": "f527e407624d6e16d4fb17593073bfe8792360ab",
+          "chunks": 18,
+          "synced_at": "2025-12-06T04:01:56.039783Z"
+        },
+        "universal_agent_nexus/ir/validation.py": {
+          "github_sha": "ac40735b425c603929cc5a87803c56ebc8c21909",
+          "chunks": 5,
+          "synced_at": "2025-12-06T04:01:57.313334Z"
+        },
+        "universal_agent_nexus/manifest.py": {
+          "github_sha": "9b7239981abc4394e5960e3cb8ca42738b3197a3",
+          "chunks": 2,
+          "synced_at": "2025-12-06T04:01:58.565548Z"
+        },
+        "universal_agent_nexus/observability/__init__.py": {
+          "github_sha": "5c8c69bc27d4d98542a623b03b072b21a358c887",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:01:59.955038Z"
+        },
+        "universal_agent_nexus/observability/logging.py": {
+          "github_sha": "51c81727ec58677195e59ef6adc3dd406bfffb3c",
+          "chunks": 2,
+          "synced_at": "2025-12-06T04:02:01.071585Z"
+        },
+        "universal_agent_nexus/observability/tracing.py": {
+          "github_sha": "7e2901a76ba494f9d5fa3f713f939f9483e5f341",
+          "chunks": 4,
+          "synced_at": "2025-12-06T04:02:02.385346Z"
+        }
+      },
+      "files_synced": 143,
+      "total_chunks": 441,
+      "last_sync": "2025-12-06T04:02:02.385346Z"
+    },
+    "mjdevaccount/universal_agent_fabric": {
+      "files": {
+        "README.md": {
+          "github_sha": "3373d6da3077c6f745ed406590648dc3dbd63513",
+          "chunks": 35,
+          "synced_at": "2025-12-06T04:02:04.555982Z"
+        },
+        "manifests/roles/researcher.yaml": {
+          "github_sha": "367350418e20b603efad77e2f89a34285b0cc65a",
+          "chunks": 4,
+          "synced_at": "2025-12-06T04:02:05.820000Z"
+        },
+        "ontology/domains/finance.yaml": {
+          "github_sha": "b068e6dcc3f9fc306396fe674341f7f16f63dfd7",
+          "chunks": 4,
+          "synced_at": "2025-12-06T04:02:07.040372Z"
+        },
+        "policy/rules/safety.yaml": {
+          "github_sha": "3c7d8dbb38fbd24fbac5bf407c49d95ae5b3c7df",
+          "chunks": 2,
+          "synced_at": "2025-12-06T04:02:08.274734Z"
+        },
+        "pyproject.toml": {
+          "github_sha": "33a4d6f6f83bfa2816d35755a63a64f4416c49ff",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:02:09.472631Z"
+        },
+        "tests/__init__.py": {
+          "github_sha": "33a488174919151b1b4c43d5cc962c2d58f2d3ec",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:02:10.533461Z"
+        },
+        "tests/conftest.py": {
+          "github_sha": "e1c5870fbef626ef26d024f8d2321be002b3fc63",
+          "chunks": 9,
+          "synced_at": "2025-12-06T04:02:11.915632Z"
+        },
+        "tests/test_builder.py": {
+          "github_sha": "7718d6f7ff646f851e6920e34b2210aa2f1371fe",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:02:13.072432Z"
+        },
+        "tests/test_integration.py": {
+          "github_sha": "0059d1d9967da2681d97366c817a69ec60f6a936",
+          "chunks": 3,
+          "synced_at": "2025-12-06T04:02:14.283515Z"
+        },
+        "universal_agent_fabric/__init__.py": {
+          "github_sha": "853a8f0b2dd7d4147df85b8d44a217b258a0a3b7",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:02:15.503627Z"
+        },
+        "universal_agent_fabric/builder.py": {
+          "github_sha": "9a52fc1eb238d0ddf334c43d3303fbd408106a3d",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:02:16.587397Z"
+        },
+        "universal_agent_fabric/cli.py": {
+          "github_sha": "f539726641462a9f226fdb7bf86a8cd4f51ddbf9",
+          "chunks": 5,
+          "synced_at": "2025-12-06T04:02:17.974420Z"
+        },
+        "universal_agent_fabric/enricher.py": {
+          "github_sha": "69ca4980352d1899beb7a3652b1346ee1182c34f",
+          "chunks": 2,
+          "synced_at": "2025-12-06T04:02:19.171179Z"
+        },
+        "universal_agent_fabric/schemas.py": {
+          "github_sha": "f5682526c848c47c286ae82f6f94f142faf3265f",
+          "chunks": 5,
+          "synced_at": "2025-12-06T04:02:20.324847Z"
+        }
+      },
+      "files_synced": 14,
+      "total_chunks": 74,
+      "last_sync": "2025-12-06T04:02:20.324847Z"
+    },
+    "mjdevaccount/universal_agent_architecture": {
+      "files": {
+        ".github/workflows/ci.yml": {
+          "github_sha": "3d299bc066407477415cf38d9cef4744dde5ea52",
+          "chunks": 3,
+          "synced_at": "2025-12-06T04:02:22.463327Z"
+        },
+        ".github/workflows/release.yml": {
+          "github_sha": "bc38477c97342310cf15e9feaff33c225231f1af",
+          "chunks": 3,
+          "synced_at": "2025-12-06T04:02:23.809313Z"
+        },
+        "README.md": {
+          "github_sha": "5443c475ac7c2b91f5ec82effeb5092a8187ee80",
+          "chunks": 29,
+          "synced_at": "2025-12-06T04:02:24.913007Z"
+        },
+        "adapters/__init__.py": {
+          "github_sha": "012b259bbd4deae7edcb757ad40d21b1aecafb9a",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:02:25.980021Z"
+        },
+        "adapters/aws/__init__.py": {
+          "github_sha": "9f571d9e505882b0510af516f1a14c52ba47526c",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:02:27.147301Z"
+        },
+        "adapters/langgraph/__init__.py": {
+          "github_sha": "7e6a528bc4b3dffd3042c7a94c175a95de53cdc6",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:02:28.275217Z"
+        },
+        "adapters/mcp/__init__.py": {
+          "github_sha": "3026d46816c80b7a07094808463fafa75d90ed7b",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:02:29.479763Z"
+        },
+        "adapters/mcp/client.py": {
+          "github_sha": "b5443bd0dfc0357e985e240a5041dfd9f612c1ff",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:02:30.786867Z"
+        },
+        "examples/__init__.py": {
+          "github_sha": "ed05bae8c537bb5e02080e0fe0f37d9981b86d42",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:02:32.095019Z"
+        },
+        "examples/basic_calculator/__init__.py": {
+          "github_sha": "14524392fad2e6e766a79b7ba87972e094f54c05",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:02:33.528461Z"
+        },
+        "examples/devops_incident/__init__.py": {
+          "github_sha": "92007860f95c768f0925c729d54d79291c0592b6",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:02:34.680683Z"
+        },
+        "examples/minimal_e2e/__init__.py": {
+          "github_sha": "9e6c2518b7b4e7624adb44a686172e91710ab83e",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:02:35.985004Z"
+        },
+        "examples/minimal_e2e/manifest.yaml": {
+          "github_sha": "0cc6fb9d93cd04caea0e396d2cd8a951b1a1e893",
+          "chunks": 7,
+          "synced_at": "2025-12-06T04:02:37.165734Z"
+        },
+        "examples/minimal_e2e/run.py": {
+          "github_sha": "3b60f2eb0be5685c04b06a6326bf3b60b3140683",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:02:38.445610Z"
+        },
+        "examples/repo_assistant/__init__.py": {
+          "github_sha": "b3bedbc88b518f55a7f63ab4ceb613d700648bfb",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:02:39.621529Z"
+        },
+        "infra/Dockerfile": {
+          "github_sha": "eb251a589ae11da1927f62a206456a6a4bd749b5",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:02:40.683578Z"
+        },
+        "infra/docker-compose.yml": {
+          "github_sha": "4e03972090b05990d74a452d84622aebcf329e07",
+          "chunks": 3,
+          "synced_at": "2025-12-06T04:02:41.763512Z"
+        },
+        "manifest.yaml": {
+          "github_sha": "64b70b4a05e6b60198bd3ff18241472d3fb29efe",
+          "chunks": 4,
+          "synced_at": "2025-12-06T04:02:42.988114Z"
+        },
+        "pyproject.toml": {
+          "github_sha": "d04608c4ba294c2ca07dea6cd2281ee97582bdc1",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:02:44.077056Z"
+        },
+        "tests/__init__.py": {
+          "github_sha": "93a21af6f1dc5fcaabef355e0d1e9285bfff9966",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:02:45.497205Z"
+        },
+        "tests/conformance/test_store_contract.py": {
+          "github_sha": "52a6f679238a0d88cbad3d8cd016a35f0f7f7c68",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:02:46.666493Z"
+        },
+        "tests/integration/__init__.py": {
+          "github_sha": "d968c0d713050eb628ec2bc6bc06391428eedea3",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:02:48.011414Z"
+        },
+        "tests/unit/__init__.py": {
+          "github_sha": "fffb423a48826a9d9a89817146e83805c08098c6",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:02:49.292350Z"
+        },
+        "tests/unit/test_smoke.py": {
+          "github_sha": "e810e7f2db136931d1456db123fa7b7b8635fda4",
+          "chunks": 6,
+          "synced_at": "2025-12-06T04:02:50.368450Z"
+        },
+        "universal_agent/__init__.py": {
+          "github_sha": "ba62680f529036cb4935a8af68b455c12d17e76a",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:02:51.553595Z"
+        },
+        "universal_agent/contracts.py": {
+          "github_sha": "3cf213ee7537dc612bc6258a9be3aff856eeb097",
+          "chunks": 4,
+          "synced_at": "2025-12-06T04:02:52.645571Z"
+        },
+        "universal_agent/graph/__init__.py": {
+          "github_sha": "a5f6a01fd2830a149212c06622fa53c023b0e2a7",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:02:54.121675Z"
+        },
+        "universal_agent/graph/engine.py": {
+          "github_sha": "a78e7b1332d723293dc56402d9aa1e927985224b",
+          "chunks": 3,
+          "synced_at": "2025-12-06T04:02:55.455596Z"
+        },
+        "universal_agent/graph/model.py": {
+          "github_sha": "c9ad7e507e11086fd0bec185e7b2469c1e00cbb2",
+          "chunks": 4,
+          "synced_at": "2025-12-06T04:02:56.727366Z"
+        },
+        "universal_agent/graph/signals.py": {
+          "github_sha": "4d538de10a568667bd0e5f7e3a8b34a37f1301c8",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:02:57.918264Z"
+        },
+        "universal_agent/graph/state.py": {
+          "github_sha": "ca9c21d2611787f21ebded4cd2ca7ca2ccdd349e",
+          "chunks": 5,
+          "synced_at": "2025-12-06T04:02:59.159707Z"
+        },
+        "universal_agent/manifests/__init__.py": {
+          "github_sha": "0179cf0161f22749968d3e244c5a97513f04ec3f",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:03:00.228398Z"
+        },
+        "universal_agent/manifests/loader.py": {
+          "github_sha": "330e81d1bdadcff1022189c50b10dceb053bedaa",
+          "chunks": 2,
+          "synced_at": "2025-12-06T04:03:01.405263Z"
+        },
+        "universal_agent/manifests/schema.py": {
+          "github_sha": "bc894c2a451ea2ccc4c9e19916d141e3d6df22e8",
+          "chunks": 36,
+          "synced_at": "2025-12-06T04:03:02.515734Z"
+        },
+        "universal_agent/manifests/validator.py": {
+          "github_sha": "86a341ba955c341076d0ab33beaa397d68341ea3",
+          "chunks": 2,
+          "synced_at": "2025-12-06T04:03:03.627307Z"
+        },
+        "universal_agent/memory/__init__.py": {
+          "github_sha": "f15b98e849524d2b51771144fbf158f01d14e061",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:03:04.824891Z"
+        },
+        "universal_agent/memory/context_manager.py": {
+          "github_sha": "6665263cc654d3ed0240e3bc421e6c39e89101c1",
+          "chunks": 4,
+          "synced_at": "2025-12-06T04:03:06.159164Z"
+        },
+        "universal_agent/memory/stores/__init__.py": {
+          "github_sha": "96b0299c28184486fb493139841d2a76ce7ac8ff",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:03:07.347614Z"
+        },
+        "universal_agent/observer/__init__.py": {
+          "github_sha": "09294cfba4341a4c20ef001677ec819252d1d9b9",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:03:08.564770Z"
+        },
+        "universal_agent/observer/sinks/__init__.py": {
+          "github_sha": "d83dd08fcf16302e45f5dd3463d67ff2dcff95f4",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:03:09.733544Z"
+        },
+        "universal_agent/observer/sinks/otel.py": {
+          "github_sha": "2401b30abb0e0fdb52a5af08daf2c30f252e91ef",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:03:11.109454Z"
+        },
+        "universal_agent/policy/__init__.py": {
+          "github_sha": "86d9a7b548822d0111d55def0b1ae08e57d0e787",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:03:12.282660Z"
+        },
+        "universal_agent/policy/engine.py": {
+          "github_sha": "34fa2fbc368fa9863f46e49347027b9d1fd6b482",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:03:13.349682Z"
+        },
+        "universal_agent/router/__init__.py": {
+          "github_sha": "40a6f46b4cc111208a6b58384597f9cc24590f08",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:03:14.703612Z"
+        },
+        "universal_agent/router/selector.py": {
+          "github_sha": "910402e99a5c92fae0cbeac469dcf6ee91f70a7c",
+          "chunks": 2,
+          "synced_at": "2025-12-06T04:03:15.838817Z"
+        },
+        "universal_agent/runtime/__init__.py": {
+          "github_sha": "8df8c1cbe9ad9d60a921d82af703f8db6208336c",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:03:18.107104Z"
+        },
+        "universal_agent/runtime/api.py": {
+          "github_sha": "594784a33379325d74317b202bf09621a381170d",
+          "chunks": 10,
+          "synced_at": "2025-12-06T04:03:19.424073Z"
+        },
+        "universal_agent/runtime/cli.py": {
+          "github_sha": "8d237e68fd2c44e07723eb6bd0503914ec3838df",
+          "chunks": 2,
+          "synced_at": "2025-12-06T04:03:20.492815Z"
+        },
+        "universal_agent/runtime/config.py": {
+          "github_sha": "ff080fb792636e2b185e84be5e791ed306c2f934",
+          "chunks": 3,
+          "synced_at": "2025-12-06T04:03:21.808596Z"
+        },
+        "universal_agent/runtime/defaults.py": {
+          "github_sha": "fd549d37d4136ba78feb6e1b910bdaea5c1f00f3",
+          "chunks": 2,
+          "synced_at": "2025-12-06T04:03:23.036063Z"
+        },
+        "universal_agent/runtime/handlers.py": {
+          "github_sha": "96ac9285662ca3bca1e0550dae78aab27862802d",
+          "chunks": 4,
+          "synced_at": "2025-12-06T04:03:24.189705Z"
+        },
+        "universal_agent/runtime/sandbox.py": {
+          "github_sha": "ff3d5efe796fe610f3f7cb28c8c443489c41d8b7",
+          "chunks": 4,
+          "synced_at": "2025-12-06T04:03:25.262504Z"
+        },
+        "universal_agent/task/__init__.py": {
+          "github_sha": "4e67f4514e6038f862d58c3c117caa005d926e59",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:03:26.363186Z"
+        },
+        "universal_agent/task/manager.py": {
+          "github_sha": "92947d9fb194e8c509d2d01b2a773102dd70a1c8",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:03:27.581912Z"
+        },
+        "universal_agent/task/queue.py": {
+          "github_sha": "5e5034de23e8d186b3467c4aa1b39bb5c4bf5ae8",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:03:28.780625Z"
+        },
+        "universal_agent/task/store.py": {
+          "github_sha": "5b17b3885e95e620ae1a0393153066d7027c328d",
+          "chunks": 2,
+          "synced_at": "2025-12-06T04:03:30.057460Z"
+        },
+        "universal_agent/tools/__init__.py": {
+          "github_sha": "264fd9d2f02f110047fad72a61503e5211bc9e53",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:03:31.463423Z"
+        },
+        "universal_agent/tools/registry.py": {
+          "github_sha": "e174df96deadae6a5c9f4e8004ba9b87988b114f",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:03:34.077477Z"
+        }
+      },
+      "files_synced": 58,
+      "total_chunks": 179,
+      "last_sync": "2025-12-06T04:03:34.077477Z"
+    },
+    "mjdevaccount/universal_agent_nexus_examples": {
+      "files": {
+        "01-hello-world/README.md": {
+          "github_sha": "253f41b954396d9a9db9c61f3962e9fed23fc530",
+          "chunks": 20,
+          "synced_at": "2025-12-06T04:03:37.834389Z"
+        },
+        "01-hello-world/manifest.yaml": {
+          "github_sha": "b5835185c805d9760a418b3cd8551ce9fb12e3cb",
+          "chunks": 7,
+          "synced_at": "2025-12-06T04:03:38.988790Z"
+        },
+        "02-content-moderation/README.md": {
+          "github_sha": "31251d61a2c439fa6d7c157d44c434685bf2af36",
+          "chunks": 15,
+          "synced_at": "2025-12-06T04:03:40.223542Z"
+        },
+        "02-content-moderation/manifest.yaml": {
+          "github_sha": "792bd74cf0e5f59bdf39d8a474d345cdd8d98c12",
+          "chunks": 7,
+          "synced_at": "2025-12-06T04:03:41.555958Z"
+        },
+        "02-content-moderation/test_content.json": {
+          "github_sha": "1e7df610c78c80747dec784a9cff851fca657f66",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:03:42.757815Z"
+        },
+        "03-data-pipeline/README.md": {
+          "github_sha": "f2a9dc8b6845fef6f7924990a978f1370f78bbaf",
+          "chunks": 14,
+          "synced_at": "2025-12-06T04:03:43.807306Z"
+        },
+        "03-data-pipeline/manifest.yaml": {
+          "github_sha": "2074c21cb54dd8acaf65fc7f31aa3dbffb7e8884",
+          "chunks": 7,
+          "synced_at": "2025-12-06T04:03:44.905217Z"
+        },
+        "04-support-chatbot/README.md": {
+          "github_sha": "df0368ef038852bc8504de78e1e29b29c9d01a96",
+          "chunks": 18,
+          "synced_at": "2025-12-06T04:03:46.146030Z"
+        },
+        "04-support-chatbot/manifest.yaml": {
+          "github_sha": "585207877668a014d08c39e428f97d58e970c6a9",
+          "chunks": 7,
+          "synced_at": "2025-12-06T04:03:47.358249Z"
+        },
+        "05-research-assistant/README.md": {
+          "github_sha": "2e92cb5401afe91140fb48e1c44784b7df1309df",
+          "chunks": 30,
+          "synced_at": "2025-12-06T04:03:48.746920Z"
+        },
+        "05-research-assistant/manifest.yaml": {
+          "github_sha": "8d2284b5211dac06b8a747a761f20195a9ccf111",
+          "chunks": 7,
+          "synced_at": "2025-12-06T04:03:50.062267Z"
+        },
+        "06-playground-simulation/DEVELOPER_GUIDE.md": {
+          "github_sha": "3411758f1f69c49e33cd4c8f9cac2c0830c3f9cf",
+          "chunks": 38,
+          "synced_at": "2025-12-06T04:03:51.309335Z"
+        },
+        "06-playground-simulation/README.md": {
+          "github_sha": "c5b2f44659ae3e2b21e6eca25970a574d508df96",
+          "chunks": 31,
+          "synced_at": "2025-12-06T04:03:52.524121Z"
+        },
+        "06-playground-simulation/UPSTREAM_GAPS.md": {
+          "github_sha": "20de1eaa752d8e72186af178d1bf949844ea7d71",
+          "chunks": 10,
+          "synced_at": "2025-12-06T04:03:53.690959Z"
+        },
+        "06-playground-simulation/backend/Dockerfile": {
+          "github_sha": "7df539e2ef6545f83c594fc4c13315418fa81d05",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:03:54.856713Z"
+        },
+        "06-playground-simulation/backend/capabilities_impl.py": {
+          "github_sha": "6e763069cb69fd17d7ce018b2908513725aabac0",
+          "chunks": 5,
+          "synced_at": "2025-12-06T04:03:55.901187Z"
+        },
+        "06-playground-simulation/backend/fabric_compiler.py": {
+          "github_sha": "2d0784e37711fa2633a1198a6ec343a155d0f60a",
+          "chunks": 4,
+          "synced_at": "2025-12-06T04:03:56.969657Z"
+        },
+        "06-playground-simulation/backend/llm_provider.py": {
+          "github_sha": "2d2d49a01ca340ddde59fd16f0674aa81bfb3261",
+          "chunks": 4,
+          "synced_at": "2025-12-06T04:03:58.239908Z"
+        },
+        "06-playground-simulation/backend/main.py": {
+          "github_sha": "d75e0ed730c59c10bb437b6042d974a26c0879cd",
+          "chunks": 6,
+          "synced_at": "2025-12-06T04:03:59.418685Z"
+        },
+        "06-playground-simulation/backend/schemas.py": {
+          "github_sha": "fef8e57746bf9edb0cb87733be9ef63e7d0690b1",
+          "chunks": 4,
+          "synced_at": "2025-12-06T04:04:00.571574Z"
+        },
+        "06-playground-simulation/fabric_archetypes/bully.yaml": {
+          "github_sha": "9938ba59d88c70aacd2acbc62967b7450570050c",
+          "chunks": 4,
+          "synced_at": "2025-12-06T04:04:01.876288Z"
+        },
+        "06-playground-simulation/fabric_archetypes/joker.yaml": {
+          "github_sha": "0d1c40d5cf18feba2f93119fc87f86a51c03ed88",
+          "chunks": 4,
+          "synced_at": "2025-12-06T04:04:03.104303Z"
+        },
+        "06-playground-simulation/fabric_archetypes/mediator.yaml": {
+          "github_sha": "a4be191b2ff253ad4250b9a2463f4e758c83a278",
+          "chunks": 4,
+          "synced_at": "2025-12-06T04:04:04.278647Z"
+        },
+        "06-playground-simulation/fabric_archetypes/shy_kid.yaml": {
+          "github_sha": "d9b6857df919cbf45c0ca15cf8288628282f9e61",
+          "chunks": 4,
+          "synced_at": "2025-12-06T04:04:05.461959Z"
+        },
+        "06-playground-simulation/fabric_archetypes/teacher.yaml": {
+          "github_sha": "d4de03eec3391349e5da6bd89e8a0f22c0a0192c",
+          "chunks": 4,
+          "synced_at": "2025-12-06T04:04:06.624899Z"
+        },
+        "06-playground-simulation/ontology/capabilities/analyze_situation.yaml": {
+          "github_sha": "48a9d8ca676d789ce0459c9608bccc8b741c914f",
+          "chunks": 4,
+          "synced_at": "2025-12-06T04:04:07.782489Z"
+        },
+        "06-playground-simulation/ontology/capabilities/observe_situation.yaml": {
+          "github_sha": "0c0e4287e88e3742acee19d86174c4a1b57a3c50",
+          "chunks": 4,
+          "synced_at": "2025-12-06T04:04:08.880956Z"
+        },
+        "06-playground-simulation/ontology/capabilities/speak.yaml": {
+          "github_sha": "d31b24df30574830751e4ccf9864bd425ceda896",
+          "chunks": 4,
+          "synced_at": "2025-12-06T04:04:09.932283Z"
+        },
+        "06-playground-simulation/ontology/domains/playground_social.yaml": {
+          "github_sha": "b2e415de0ea6c147a3d7ea5c786214841a99235c",
+          "chunks": 4,
+          "synced_at": "2025-12-06T04:04:11.112428Z"
+        },
+        "06-playground-simulation/policy/rules/playground_safety.yaml": {
+          "github_sha": "8bd658916bd4c375cfad4dce0658b35f7bf207e2",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:04:12.189617Z"
+        },
+        "06-playground-simulation/tests/conftest.py": {
+          "github_sha": "792b0a8155bf5432949bd6597d733d19aec45812",
+          "chunks": 4,
+          "synced_at": "2025-12-06T04:04:13.508932Z"
+        },
+        "06-playground-simulation/tests/test_fabric_integration.py": {
+          "github_sha": "ff6f3d6f8554c06954679ccdef5b791db647fa3c",
+          "chunks": 16,
+          "synced_at": "2025-12-06T04:04:14.623349Z"
+        },
+        "07-innovation-waves/README.md": {
+          "github_sha": "88e87d5f319746809a5acf2cf53fd66ad621d125",
+          "chunks": 26,
+          "synced_at": "2025-12-06T04:04:16.028070Z"
+        },
+        "07-innovation-waves/backend/main.py": {
+          "github_sha": "e23255687dc08d4890a0ff0a1cbc070391a0e897",
+          "chunks": 16,
+          "synced_at": "2025-12-06T04:04:17.088789Z"
+        },
+        "07-innovation-waves/backend/market_engine.py": {
+          "github_sha": "7879dd0b8bae4373a91669d8725aa4ac6f6f31a6",
+          "chunks": 4,
+          "synced_at": "2025-12-06T04:04:18.321898Z"
+        },
+        "07-innovation-waves/fabric_archetypes/conservative_corp.yaml": {
+          "github_sha": "3b6611ee0b8f54d9eb4e439d8b3856f3d5c57eb7",
+          "chunks": 4,
+          "synced_at": "2025-12-06T04:04:19.450473Z"
+        },
+        "07-innovation-waves/fabric_archetypes/fast_follower.yaml": {
+          "github_sha": "febab7a4bf1a31131df115671dc6169f57154214",
+          "chunks": 4,
+          "synced_at": "2025-12-06T04:04:20.673320Z"
+        },
+        "07-innovation-waves/fabric_archetypes/innovator.yaml": {
+          "github_sha": "9bb2c1237d893c27ff8e69ac73834c3b6c3859a4",
+          "chunks": 4,
+          "synced_at": "2025-12-06T04:04:21.875201Z"
+        },
+        "07-innovation-waves/fabric_archetypes/regulator.yaml": {
+          "github_sha": "cf7ce63d6147c90ea2552da9b25f83260d316255",
+          "chunks": 4,
+          "synced_at": "2025-12-06T04:04:23.089367Z"
+        },
+        "07-innovation-waves/innovation_waves.yaml": {
+          "github_sha": "bb9cc8191f3d8e58c9dccc40dd9e3734ecb4a500",
+          "chunks": 6,
+          "synced_at": "2025-12-06T04:04:24.628298Z"
+        },
+        "07-innovation-waves/ontology/capabilities/adopt_tech.yaml": {
+          "github_sha": "16286bfe0b7b4ef267655715961dce8a0b0ec437",
+          "chunks": 5,
+          "synced_at": "2025-12-06T04:04:25.849156Z"
+        },
+        "07-innovation-waves/ontology/capabilities/analyze_market.yaml": {
+          "github_sha": "9ca6d6bdf62988ff30be4f03b4ff1c2e2fbd15bb",
+          "chunks": 5,
+          "synced_at": "2025-12-06T04:04:27.202465Z"
+        },
+        "07-innovation-waves/ontology/capabilities/compete.yaml": {
+          "github_sha": "f342d926bb89d7dc9948148ab16d574a7216112c",
+          "chunks": 5,
+          "synced_at": "2025-12-06T04:04:28.415730Z"
+        },
+        "07-innovation-waves/policy/rules/market_governance.yaml": {
+          "github_sha": "ce2713ba8995c9d518f33b998162d25ee9e449d5",
+          "chunks": 3,
+          "synced_at": "2025-12-06T04:04:29.796475Z"
+        },
+        "08-local-agent-runtime/README.md": {
+          "github_sha": "70263558b187f2ed142fb75619aa40e25d2e2b1b",
+          "chunks": 34,
+          "synced_at": "2025-12-06T04:04:31.085488Z"
+        },
+        "08-local-agent-runtime/backend/compiler_bridge.py": {
+          "github_sha": "c47e560a120b385cc615b445466b894723d3912a",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:04:32.323118Z"
+        },
+        "08-local-agent-runtime/fabric_archetypes/code_assistant.yaml": {
+          "github_sha": "9ee52b4f1e5260a7c2e3d3ea00e2574b2a734f15",
+          "chunks": 4,
+          "synced_at": "2025-12-06T04:04:33.616172Z"
+        },
+        "08-local-agent-runtime/local_agent.yaml": {
+          "github_sha": "12e29c9aa944509e5985318324070160c42bcf9e",
+          "chunks": 7,
+          "synced_at": "2025-12-06T04:04:34.809493Z"
+        },
+        "08-local-agent-runtime/mcp_servers/filesystem/server.py": {
+          "github_sha": "2a9775f50febf98f8650eccc7f4057ced41a228a",
+          "chunks": 7,
+          "synced_at": "2025-12-06T04:04:36.140244Z"
+        },
+        "08-local-agent-runtime/mcp_servers/git/server.py": {
+          "github_sha": "09f761b9892a5039e4ec131593e31f39cfd76465",
+          "chunks": 6,
+          "synced_at": "2025-12-06T04:04:37.281556Z"
+        },
+        "08-local-agent-runtime/ontology/capabilities/read_file.yaml": {
+          "github_sha": "8a29cb173c06ad2238b7b47d8a42b4c1a8ce051c",
+          "chunks": 5,
+          "synced_at": "2025-12-06T04:04:38.355625Z"
+        },
+        "08-local-agent-runtime/quick_test.py": {
+          "github_sha": "468381b7370dd2718bf8d7b1f9ceb5434ef987d1",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:04:39.469459Z"
+        },
+        "08-local-agent-runtime/runtime/agent_runtime.py": {
+          "github_sha": "3922f52ccbf8dd84eb4b7a05b90c685f18a46e0f",
+          "chunks": 9,
+          "synced_at": "2025-12-06T04:04:40.614102Z"
+        },
+        "08-local-agent-runtime/start.ps1": {
+          "github_sha": "ad01e38bb56fc7cdec1a3e0343c578cf04e4f669",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:04:41.703159Z"
+        },
+        "08-local-agent-runtime/start.sh": {
+          "github_sha": "ab5fedf30c65380006a873dba60f9aadb4cd9d73",
+          "chunks": 1,
+          "synced_at": "2025-12-06T04:04:43.000534Z"
+        },
+        "08-local-agent-runtime/test_runtime.py": {
+          "github_sha": "583477ea8ffce487cc4787a2b495d526d808945e",
+          "chunks": 4,
+          "synced_at": "2025-12-06T04:04:44.332442Z"
+        },
+        "README.md": {
+          "github_sha": "bf2c6f8bc1c46fe233b62392be3dbc1c2871abdb",
+          "chunks": 28,
+          "synced_at": "2025-12-06T04:04:45.422155Z"
+        },
+        "migration-guides/aws-to-uaa.md": {
+          "github_sha": "5f5edcc358dd4dc7aa2ace90890dc94971b97cd3",
+          "chunks": 20,
+          "synced_at": "2025-12-06T04:04:46.494301Z"
+        },
+        "migration-guides/custom-optimization-passes.md": {
+          "github_sha": "a10fc5cf510fb7288ec39fb95da6ce5abbccaa4b",
+          "chunks": 22,
+          "synced_at": "2025-12-06T04:04:47.628902Z"
+        },
+        "migration-guides/langgraph-to-uaa.md": {
+          "github_sha": "62ad39abb81582adab71b2f7ed8408d58348345b",
+          "chunks": 20,
+          "synced_at": "2025-12-06T04:04:48.689935Z"
+        }
+      },
+      "files_synced": 60,
+      "total_chunks": 549,
+      "last_sync": "2025-12-06T04:04:48.689935Z"
+    }
+  },
+  "last_full_sync": "2025-12-06T04:04:48.695447Z"
+}

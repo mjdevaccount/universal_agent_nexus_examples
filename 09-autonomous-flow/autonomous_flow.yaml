@@ -1,0 +1,70 @@
+# AutonomousFlow - Dynamic Workflow Discovery
+# This manifest will be regenerated based on discovered tools
+name: "autonomous_flow"
+version: "1.0.0"
+description: "Autonomous agent that discovers tools and regenerates workflows dynamically"
+
+# Tool discovery configuration
+discovery:
+  mcp_servers:
+    - name: "filesystem"
+      url: "http://localhost:8000/mcp"
+    - name: "git"
+      url: "http://localhost:8001/mcp"
+  auto_discover: true
+
+# Base workflow structure
+# This will be expanded based on discovered tools
+graphs:
+  - name: main
+    entry_node: agent
+    nodes:
+      - id: agent
+        kind: router
+        label: "Autonomous Agent"
+        config:
+          llm: "qwen2.5-coder:14b"
+          system_message: |
+            You are an autonomous agent that can discover, plan, and execute tasks using available tools.
+            You have access to GitHub, Qdrant, filesystem, and Git tools.
+            When given a task, you should:
+            1. Understand what needs to be done
+            2. Use tools to gather information
+            3. Plan your approach
+            4. Execute using the appropriate tools
+            5. Verify results and provide summaries
+            
+            You can use multiple tools in sequence to accomplish complex tasks.
+            Think step by step and use tools as needed.
+      
+      - id: tools
+        kind: tool
+        label: "Execute Tool"
+        config:
+          tool_selection: "auto"
+    
+    edges:
+      - from_node: agent
+        to_node: tools
+        condition:
+          expression: "has_tool_calls == true"
+      - from_node: tools
+        to_node: agent
+      - from_node: agent
+        to_node: "end"
+        condition:
+          expression: "has_tool_calls == false AND task_complete == true"
+
+# Tools will be populated dynamically from discovery
+tools: []
+
+# Routers
+routers:
+  - name: tool_planner
+    llm_provider: "ollama"
+    model: "qwen2.5-coder:14b"
+    system_message: "Plan which tools to use based on available capabilities"
+
+# Policies
+policies: []
+
