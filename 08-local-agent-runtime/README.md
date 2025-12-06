@@ -27,6 +27,9 @@ Ollama LLM (function calling)
 ```bash
 cd 08-local-agent-runtime
 pip install -r backend/requirements.txt
+
+# Or install individually:
+pip install langgraph langchain langchain-core langchain-ollama httpx fastapi uvicorn pyyaml
 ```
 
 ### 2. Start MCP Servers

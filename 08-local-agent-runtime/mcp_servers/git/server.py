@@ -5,32 +5,74 @@ Implements Model Context Protocol for Git operations.
 December 2025 MCP Spec compliant.
 """
 
-from mcp.server import Server
-from mcp.types import Tool
-from typing import Any
-import subprocess
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import Optional
 from pathlib import Path
-import json
+import subprocess
+
+app = FastAPI(title="MCP Git Server")
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
-server = Server("git-server")
+class ToolRequest(BaseModel):
+    repo_path: Optional[str] = "."
+    message: Optional[str] = None
 
 
-@server.tool()
-def git_status(repo_path: str = ".") -> str:
-    """
-    Get Git repository status.
+# Tool definitions
+TOOLS = [
+    {
+        "name": "git_status",
+        "description": "Get Git repository status",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "repo_path": {"type": "string", "description": "Path to Git repository", "default": "."}
+            }
+        }
+    },
+    {
+        "name": "git_commit",
+        "description": "Create a Git commit",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "repo_path": {"type": "string", "description": "Path to Git repository", "default": "."},
+                "message": {"type": "string", "description": "Commit message"}
+            },
+            "required": ["message"]
+        }
+    },
+    {
+        "name": "git_diff",
+        "description": "Get Git diff of changes",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "repo_path": {"type": "string", "description": "Path to Git repository", "default": "."}
+            }
+        }
+    }
+]
+
+
+@app.get("/mcp/tools")
+async def list_tools():
+    """MCP introspection endpoint."""
+    return {"tools": TOOLS}
+
+
+@app.post("/mcp/tools/git_status")
+async def git_status(request: ToolRequest):
+    """Get Git repository status."""
+    repo_path = request.repo_path or "."
     
-    Args:
-        repo_path: Path to Git repository
-        
-    Returns:
-        Git status output
-    """
     try:
         repo = Path(repo_path)
         if not (repo / ".git").exists():
-            return f"Error: Not a Git repository: {repo_path}"
+            return {"content": f"Error: Not a Git repository: {repo_path}"}
         
         result = subprocess.run(
             ["git", "status", "--porcelain"],
@@ -41,29 +83,25 @@ def git_status(repo_path: str = ".") -> str:
         )
         
         if result.returncode != 0:
-            return f"Error: {result.stderr}"
+            return {"content": f"Error: {result.stderr}"}
         
-        return result.stdout if result.stdout else "Working tree clean"
+        return {"content": result.stdout if result.stdout else "Working tree clean"}
     except Exception as e:
-        return f"Error: {str(e)}"
+        return {"content": f"Error: {str(e)}"}
 
 
-@server.tool()
-def git_commit(repo_path: str, message: str) -> str:
-    """
-    Create a Git commit.
+@app.post("/mcp/tools/git_commit")
+async def git_commit(request: ToolRequest):
+    """Create a Git commit."""
+    if not request.message:
+        raise HTTPException(status_code=400, detail="message is required")
     
-    Args:
-        repo_path: Path to Git repository
-        message: Commit message
-        
-    Returns:
-        Commit result
-    """
+    repo_path = request.repo_path or "."
+    
     try:
         repo = Path(repo_path)
         if not (repo / ".git").exists():
-            return f"Error: Not a Git repository: {repo_path}"
+            return {"content": f"Error: Not a Git repository: {repo_path}"}
         
         # Stage all changes
         subprocess.run(
@@ -75,7 +113,7 @@ def git_commit(repo_path: str, message: str) -> str:
         
         # Commit
         result = subprocess.run(
-            ["git", "commit", "-m", message],
+            ["git", "commit", "-m", request.message],
             cwd=repo,
             capture_output=True,
             text=True,
@@ -83,28 +121,22 @@ def git_commit(repo_path: str, message: str) -> str:
         )
         
         if result.returncode != 0:
-            return f"Error: {result.stderr}"
+            return {"content": f"Error: {result.stderr}"}
         
-        return f"Committed: {message}"
+        return {"content": f"Committed: {request.message}"}
     except Exception as e:
-        return f"Error: {str(e)}"
+        return {"content": f"Error: {str(e)}"}
 
 
-@server.tool()
-def git_diff(repo_path: str = ".") -> str:
-    """
-    Get Git diff of changes.
+@app.post("/mcp/tools/git_diff")
+async def git_diff(request: ToolRequest):
+    """Get Git diff of changes."""
+    repo_path = request.repo_path or "."
     
-    Args:
-        repo_path: Path to Git repository
-        
-    Returns:
-        Git diff output
-    """
     try:
         repo = Path(repo_path)
         if not (repo / ".git").exists():
-            return f"Error: Not a Git repository: {repo_path}"
+            return {"content": f"Error: Not a Git repository: {repo_path}"}
         
         result = subprocess.run(
             ["git", "diff"],
@@ -115,17 +147,19 @@ def git_diff(repo_path: str = ".") -> str:
         )
         
         if result.returncode != 0:
-            return f"Error: {result.stderr}"
+            return {"content": f"Error: {result.stderr}"}
         
-        return result.stdout if result.stdout else "No changes"
+        return {"content": result.stdout if result.stdout else "No changes"}
     except Exception as e:
-        return f"Error: {str(e)}"
+        return {"content": f"Error: {str(e)}"}
+
+
+@app.get("/health")
+async def health():
+    """Health check."""
+    return {"status": "ok", "server": "git", "tools": len(TOOLS)}
 
 
 if __name__ == "__main__":
     import uvicorn
-    from mcp.server.fastapi import create_app
-    
-    app = create_app(server)
     uvicorn.run(app, host="0.0.0.0", port=8001)
-

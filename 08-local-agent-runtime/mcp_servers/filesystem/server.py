@@ -8,82 +8,131 @@ December 2025 MCP Spec:
 - Standardized schema format
 """
 
-from mcp.server import Server
-from mcp.types import Tool, TextContent
-from typing import Any
-import os
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import Optional
 from pathlib import Path
+import json
+import re
+
+app = FastAPI(title="MCP Filesystem Server")
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
-# Initialize MCP server
-server = Server("filesystem-server")
+class ToolRequest(BaseModel):
+    path: Optional[str] = None
+    content: Optional[str] = None
+    pattern: Optional[str] = None
+    directory: Optional[str] = "."
 
 
-@server.tool()
-def read_file(path: str) -> str:
-    """
-    Read contents of a file.
+# Tool definitions for introspection
+TOOLS = [
+    {
+        "name": "read_file",
+        "description": "Read contents of a file",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "path": {"type": "string", "description": "Path to file to read"}
+            },
+            "required": ["path"]
+        }
+    },
+    {
+        "name": "write_file",
+        "description": "Write content to a file",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "path": {"type": "string", "description": "Path to file"},
+                "content": {"type": "string", "description": "Content to write"}
+            },
+            "required": ["path", "content"]
+        }
+    },
+    {
+        "name": "list_directory",
+        "description": "List files in a directory",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "path": {"type": "string", "description": "Directory path", "default": "."}
+            }
+        }
+    },
+    {
+        "name": "search_code",
+        "description": "Search for code patterns",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "pattern": {"type": "string", "description": "Regex pattern"},
+                "directory": {"type": "string", "description": "Directory to search", "default": "."}
+            },
+            "required": ["pattern"]
+        }
+    }
+]
+
+
+@app.get("/mcp/tools")
+async def list_tools():
+    """MCP introspection endpoint - list available tools."""
+    return {"tools": TOOLS}
+
+
+@app.post("/mcp/tools/read_file")
+async def read_file(request: ToolRequest):
+    """Read contents of a file."""
+    if not request.path:
+        raise HTTPException(status_code=400, detail="path is required")
     
-    Args:
-        path: Path to the file to read
-        
-    Returns:
-        File contents as string
-    """
     try:
-        file_path = Path(path)
+        file_path = Path(request.path)
         if not file_path.exists():
-            return f"Error: File not found: {path}"
+            return {"content": f"Error: File not found: {request.path}"}
         if not file_path.is_file():
-            return f"Error: Path is not a file: {path}"
+            return {"content": f"Error: Path is not a file: {request.path}"}
         
         with open(file_path, 'r', encoding='utf-8') as f:
-            return f.read()
-    except Exception as e:
-        return f"Error reading file: {str(e)}"
-
-
-@server.tool()
-def write_file(path: str, content: str) -> str:
-    """
-    Write content to a file.
-    
-    Args:
-        path: Path to the file to write
-        content: Content to write
+            content = f.read()
         
-    Returns:
-        Success message
-    """
+        return {"content": content}
+    except Exception as e:
+        return {"content": f"Error reading file: {str(e)}"}
+
+
+@app.post("/mcp/tools/write_file")
+async def write_file(request: ToolRequest):
+    """Write content to a file."""
+    if not request.path or request.content is None:
+        raise HTTPException(status_code=400, detail="path and content are required")
+    
     try:
-        file_path = Path(path)
+        file_path = Path(request.path)
         file_path.parent.mkdir(parents=True, exist_ok=True)
         
         with open(file_path, 'w', encoding='utf-8') as f:
-            f.write(content)
+            f.write(request.content)
         
-        return f"Successfully wrote {len(content)} bytes to {path}"
+        return {"content": f"Successfully wrote {len(request.content)} bytes to {request.path}"}
     except Exception as e:
-        return f"Error writing file: {str(e)}"
+        return {"content": f"Error writing file: {str(e)}"}
 
 
-@server.tool()
-def list_directory(path: str = ".") -> str:
-    """
-    List files and directories in a path.
+@app.post("/mcp/tools/list_directory")
+async def list_directory(request: ToolRequest):
+    """List files and directories in a path."""
+    path = request.path or "."
     
-    Args:
-        path: Directory path (default: current directory)
-        
-    Returns:
-        JSON string with directory listing
-    """
     try:
         dir_path = Path(path)
         if not dir_path.exists():
-            return f"Error: Directory not found: {path}"
+            return {"content": f"Error: Directory not found: {path}"}
         if not dir_path.is_dir():
-            return f"Error: Path is not a directory: {path}"
+            return {"content": f"Error: Path is not a directory: {path}"}
         
         items = []
         for item in sorted(dir_path.iterdir()):
@@ -93,34 +142,26 @@ def list_directory(path: str = ".") -> str:
                 "size": item.stat().st_size if item.is_file() else None
             })
         
-        import json
-        return json.dumps(items, indent=2)
+        return {"content": json.dumps(items, indent=2)}
     except Exception as e:
-        return f"Error listing directory: {str(e)}"
+        return {"content": f"Error listing directory: {str(e)}"}
 
 
-@server.tool()
-def search_code(pattern: str, directory: str = ".") -> str:
-    """
-    Search for code patterns in files.
+@app.post("/mcp/tools/search_code")
+async def search_code(request: ToolRequest):
+    """Search for code patterns in files."""
+    if not request.pattern:
+        raise HTTPException(status_code=400, detail="pattern is required")
     
-    Args:
-        pattern: Regex pattern to search for
-        directory: Directory to search in
-        
-    Returns:
-        JSON string with search results
-    """
+    directory = request.directory or "."
+    
     try:
-        import re
-        import json
-        
         dir_path = Path(directory)
         if not dir_path.exists():
-            return f"Error: Directory not found: {directory}"
+            return {"content": f"Error: Directory not found: {directory}"}
         
         results = []
-        regex = re.compile(pattern)
+        regex = re.compile(request.pattern)
         
         # Search in Python files
         for py_file in dir_path.rglob("*.py"):
@@ -136,15 +177,17 @@ def search_code(pattern: str, directory: str = ".") -> str:
             except Exception:
                 continue
         
-        return json.dumps(results, indent=2) if results else "No matches found"
+        return {"content": json.dumps(results, indent=2) if results else "No matches found"}
     except Exception as e:
-        return f"Error searching: {str(e)}"
+        return {"content": f"Error searching: {str(e)}"}
+
+
+@app.get("/health")
+async def health():
+    """Health check."""
+    return {"status": "ok", "server": "filesystem", "tools": len(TOOLS)}
 
 
 if __name__ == "__main__":
     import uvicorn
-    from mcp.server.fastapi import create_app
-    
-    app = create_app(server)
     uvicorn.run(app, host="0.0.0.0", port=8000)
-
