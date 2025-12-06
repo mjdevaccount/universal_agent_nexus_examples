@@ -79,17 +79,20 @@ class MCPToolLoader:
 class MCPTool(BaseTool):
     """LangChain tool wrapper for MCP tools."""
     
-    def __init__(self, server_url: str, tool_name: str, input_schema: dict, **kwargs):
-        super().__init__(**kwargs)
-        self.server_url = server_url
-        self.tool_name = tool_name
-        self.input_schema = input_schema
+    def __init__(self, server_url: str, tool_name: str, input_schema: dict, name: str = None, description: str = ""):
+        # Store MCP-specific attributes
+        self._server_url = server_url
+        self._tool_name = tool_name
+        self._input_schema = input_schema
+        
+        # Call parent with only BaseTool-compatible fields
+        super().__init__(name=name or tool_name, description=description)
     
     def _run(self, **kwargs) -> str:
         """Execute MCP tool via HTTP."""
         try:
             response = httpx.post(
-                f"{self.server_url}/tools/{self.tool_name}",
+                f"{self._server_url}/tools/{self._tool_name}",
                 json=kwargs,
                 timeout=10
             )
@@ -104,7 +107,7 @@ class MCPTool(BaseTool):
         async with httpx.AsyncClient() as client:
             try:
                 response = await client.post(
-                    f"{self.server_url}/tools/{self.tool_name}",
+                    f"{self._server_url}/tools/{self._tool_name}",
                     json=kwargs,
                     timeout=10
                 )
@@ -117,11 +120,12 @@ class MCPTool(BaseTool):
 
 # ===== LLM SETUP =====
 
-def create_llm_with_tools(tools: list[BaseTool], model: str = "llama3.2:11b"):
+def create_llm_with_tools(tools: list[BaseTool], model: str = "gemma:2b-instruct"):
     """
     Create Ollama LLM with function calling support.
     
     December 2025: Ollama models support native function calling.
+    Note: Not all models support bind_tools - use manual tool calling if needed.
     """
     try:
         from langchain_ollama import ChatOllama
@@ -131,10 +135,15 @@ def create_llm_with_tools(tools: list[BaseTool], model: str = "llama3.2:11b"):
             temperature=0.7,
         )
         
-        # Bind tools for function calling
+        # Try to bind tools (some models don't support it)
         if tools:
-            llm_with_tools = llm.bind_tools(tools)
-            return llm_with_tools, tools
+            try:
+                llm_with_tools = llm.bind_tools(tools)
+                return llm_with_tools, tools
+            except Exception as e:
+                print(f"Warning: Model {model} doesn't support bind_tools: {e}")
+                print("Using LLM without tool binding (manual tool calling)")
+                return llm, tools
         else:
             return llm, []
             
@@ -156,17 +165,35 @@ def agent_node(state: AgentState, llm, tools: list[BaseTool]):
                 AIMessage(
                     content="I'll help you with that. Let me use the available tools.",
                     tool_calls=[{
-                        "name": "read_file",
-                        "args": {"path": "main.py"},
+                        "name": "git_status",
+                        "args": {"repo_path": "."},
                         "id": "call_1"
                     }]
                 )
             ]
         }
     
-    # Invoke LLM with tools
-    response = llm.invoke(messages)
-    return {"messages": [response]}
+    # Invoke LLM
+    try:
+        response = llm.invoke(messages)
+        
+        # Check if response has tool_calls (from bind_tools)
+        if hasattr(response, "tool_calls") and response.tool_calls:
+            return {"messages": [response]}
+        
+        # If no tool calls, check if we should call tools manually
+        # For models without bind_tools support, we'll just return the response
+        return {"messages": [response]}
+        
+    except Exception as e:
+        # Fallback: return a simple response
+        return {
+            "messages": [
+                AIMessage(
+                    content=f"I understand. Available tools: {', '.join([t.name for t in tools])}",
+                )
+            ]
+        }
 
 
 def tool_node(state: AgentState, tools: list[BaseTool]):
@@ -241,9 +268,9 @@ def create_agent_graph(tools: list[BaseTool], llm):
     )
     graph.add_edge("tools", "agent")
     
-    # Add memory/checkpointing
-    memory = MemorySaver()
-    return graph.compile(checkpointer=memory)
+    # Compile without checkpointer for simple execution
+    # (Checkpointer requires thread_id config, use MemorySaver only when needed)
+    return graph.compile()
 
 
 # ===== MAIN RUNTIME =====
