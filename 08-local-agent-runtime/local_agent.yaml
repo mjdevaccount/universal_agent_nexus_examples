@@ -1,0 +1,146 @@
+# Local Agent Runtime - MCP Tool Integration
+# Demonstrates: Fabric → Nexus → LangGraph with MCP tools
+name: "local_agent_runtime"
+version: "1.0.0"
+description: "Fully local agent with MCP tool integration, LangGraph orchestration, and Ollama LLM"
+
+roles:
+  - name: "CodeAssistant"
+    base_template: "react_loop"
+    system_prompt_template: |
+      You are a helpful code assistant running locally.
+      
+      You have access to tools via MCP (Model Context Protocol):
+      - Filesystem operations (read, write, list files)
+      - Git operations (status, commit, diff)
+      - Code analysis and search
+      
+      When the user asks you to do something:
+      1. Use tools to gather information
+      2. Analyze the results
+      3. Take action if needed
+      4. Provide clear explanations
+      
+      Keep responses concise. Show tool usage clearly.
+    default_capabilities: ["read_file", "write_file", "list_directory", "git_status", "search_code"]
+
+domains:
+  - name: "filesystem_operations"
+    description: "File and directory operations via MCP"
+    capabilities:
+      - read_file
+      - write_file
+      - list_directory
+    system_prompt_mixin: |
+      You can read, write, and list files on the local filesystem.
+      Always check file existence before operations.
+      Respect file permissions.
+
+  - name: "git_operations"
+    description: "Git repository operations via MCP"
+    capabilities:
+      - git_status
+      - git_commit
+      - git_diff
+    system_prompt_mixin: |
+      You can interact with Git repositories.
+      Check status before making changes.
+      Provide clear commit messages.
+
+tools:
+  - name: "read_file"
+    description: "Read contents of a file"
+    protocol: "mcp"
+    mcp_server: "filesystem"
+    config:
+      server_url: "http://localhost:8000/mcp"
+      tool_name: "read_file"
+      input_schema:
+        type: object
+        properties:
+          path:
+            type: string
+            description: "Path to file to read"
+        required: ["path"]
+  
+  - name: "write_file"
+    description: "Write content to a file"
+    protocol: "mcp"
+    mcp_server: "filesystem"
+    config:
+      server_url: "http://localhost:8000/mcp"
+      tool_name: "write_file"
+      input_schema:
+        type: object
+        properties:
+          path:
+            type: string
+            description: "Path to file to write"
+          content:
+            type: string
+            description: "Content to write"
+        required: ["path", "content"]
+  
+  - name: "list_directory"
+    description: "List files in a directory"
+    protocol: "mcp"
+    mcp_server: "filesystem"
+    config:
+      server_url: "http://localhost:8000/mcp"
+      tool_name: "list_directory"
+      input_schema:
+        type: object
+        properties:
+          path:
+            type: string
+            description: "Directory path"
+        required: ["path"]
+  
+  - name: "git_status"
+    description: "Get Git repository status"
+    protocol: "mcp"
+    mcp_server: "git"
+    config:
+      server_url: "http://localhost:8001/mcp"
+      tool_name: "git_status"
+      input_schema:
+        type: object
+        properties:
+          repo_path:
+            type: string
+            description: "Path to Git repository"
+        required: ["repo_path"]
+  
+  - name: "search_code"
+    description: "Search for code patterns in files"
+    protocol: "mcp"
+    mcp_server: "filesystem"
+    config:
+      server_url: "http://localhost:8000/mcp"
+      tool_name: "search_code"
+      input_schema:
+        type: object
+        properties:
+          pattern:
+            type: string
+            description: "Search pattern (regex)"
+          directory:
+            type: string
+            description: "Directory to search"
+        required: ["pattern", "directory"]
+
+governance:
+  - name: "file_safety"
+    description: "Prevent dangerous file operations"
+    target_pattern: ".*write_file.*"
+    action: "require_approval"
+    severity: "medium"
+    conditions:
+      path_matches: ".*\\.(exe|sh|bat|ps1)$"
+  
+  - name: "git_safety"
+    description: "Require approval for destructive Git operations"
+    target_pattern: ".*git_(push|reset|rebase).*"
+    action: "require_approval"
+    severity: "high"
+

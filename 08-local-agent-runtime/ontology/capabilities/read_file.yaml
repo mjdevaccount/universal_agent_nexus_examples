@@ -1,0 +1,23 @@
+name: "read_file"
+description: "Read contents of a file from the local filesystem"
+protocol: "mcp"
+implementation: "mcp_tool"
+config:
+  mcp_server: "filesystem"
+  tool_name: "read_file"
+  input_schema:
+    type: object
+    properties:
+      path:
+        type: string
+        description: "Path to the file to read"
+    required: ["path"]
+  output_schema:
+    type: object
+    properties:
+      content:
+        type: string
+        description: "File contents"
+      success:
+        type: boolean
+

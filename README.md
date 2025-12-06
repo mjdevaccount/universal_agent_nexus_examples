@@ -6,7 +6,7 @@
 
 **Learn by doing: content moderation, data pipelines, chatbots, research assistants, interactive playground, and migration guides.**
 
-[![Examples](https://img.shields.io/badge/examples-7-blue.svg)](.)
+[![Examples](https://img.shields.io/badge/examples-8-blue.svg)](.)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 </div>
@@ -147,6 +147,33 @@ pip install -r backend/requirements.txt
 python backend/main.py
 # Open frontend/index.html (single view)
 # Open frontend/demo-matrix.html (5-runtime matrix)
+```
+
+---
+
+### **8. Local Agent Runtime** ([08-local-agent-runtime/](08-local-agent-runtime/)) 🤖
+**MCP Tools + LangGraph + Ollama - December 2025 Stack**
+
+Fully local agent with MCP tool integration. Demonstrates compiler architecture for tool calling.
+
+- ✅ MCP servers (filesystem, git) with auto-discovery
+- ✅ LangGraph orchestration with tool routing
+- ✅ Ollama with native function calling
+- ✅ Compiler bridge: Fabric YAML → LangGraph runtime
+- ✅ Tool introspection (MCP November 2025 spec)
+
+**Perfect for:** Understanding tool integration, compiler architecture, local agent development
+
+**Try it:**
+```bash
+cd 08-local-agent-runtime
+ollama pull llama3.2:11b
+pip install -r backend/requirements.txt
+# Start MCP servers
+python mcp_servers/filesystem/server.py &
+python mcp_servers/git/server.py &
+# Run agent
+python runtime/agent_runtime.py
 ```
 
 ---
