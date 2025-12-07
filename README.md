@@ -6,7 +6,7 @@
 
 **Learn by doing: content moderation, data pipelines, chatbots, research assistants, interactive playground, and migration guides.**
 
-[![Examples](https://img.shields.io/badge/examples-11-blue.svg)](.)
+[![Examples](https://img.shields.io/badge/examples-12-blue.svg)](.)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 </div>
@@ -244,6 +244,31 @@ nexus compile manifest.yaml --target langgraph --output agent.py
 
 ---
 
+<<<<<<< HEAD
+=======
+### **12. Self-Modifying Agent (Runtime Tool Generation)** ([12-self-modifying-agent/](12-self-modifying-agent/)) 🔁
+**Evolve manifests from failure logs with reusable helpers**
+
+Generate a repair tool from repeated failures, wire it into the router, and recompile—all powered by the shared `SelfModifyingAgent` abstraction.
+
+- ✅ Execution-log driven tool synthesis
+- ✅ Deterministic tool definitions (promotion-safe)
+- ✅ Router wiring that preserves single-decision semantics while adding new branches
+- ✅ End-to-end regeneration of an evolved agent file
+
+**Perfect for:** Systems that must heal themselves when new failure patterns appear.
+
+**Try it:**
+```bash
+cd 12-self-modifying-agent
+pip install -r requirements.txt
+python generate_manifest.py
+python self_modifying_runtime.py
+```
+
+---
+
+>>>>>>> codex/add-examples-to-universal_agent_examples-l1782c
 ## 🔄 **Migration Guides**
 
 ### **Migrating from LangGraph** ([migration-guides/langgraph-to-uaa.md](migration-guides/langgraph-to-uaa.md))

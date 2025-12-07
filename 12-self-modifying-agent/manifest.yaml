@@ -1,0 +1,116 @@
+name: self-modifying-agent
+version: 1.0.0
+description: Decision router with tool branches.
+graphs:
+- name: main
+  entry_node: analyze_query
+  nodes:
+  - id: analyze_query
+    kind: router
+    label: Decision Router
+    description: null
+    config:
+      system_message: Decide whether to search documents or calculate risk.
+      llm: local://qwen2.5-32b
+    source_location: null
+    metadata:
+      data: {}
+      _annotations: {}
+    router_ref: null
+    tool_ref: null
+  - id: search_docs_exec
+    kind: tool
+    label: Search Documents
+    description: null
+    config: {}
+    source_location: null
+    metadata:
+      data: {}
+      _annotations: {}
+    router_ref: null
+    tool_ref: doc_search
+  - id: calculate_risk_exec
+    kind: tool
+    label: Calculate Risk
+    description: null
+    config: {}
+    source_location: null
+    metadata:
+      data: {}
+      _annotations: {}
+    router_ref: null
+    tool_ref: risk_calculator
+  - id: format_response
+    kind: task
+    label: Format Response
+    description: null
+    config:
+      prompt: 'Format the result for the user: {result}'
+    source_location: null
+    metadata:
+      data: {}
+      _annotations: {}
+    router_ref: null
+    tool_ref: null
+  edges:
+  - from_node: analyze_query
+    to_node: search_docs_exec
+    condition:
+      expression: contains(output, 'search_docs')
+    metadata:
+      data: {}
+      _annotations: {}
+  - from_node: search_docs_exec
+    to_node: format_response
+    condition:
+      trigger: success
+      expression: null
+      route: null
+    metadata:
+      data: {}
+      _annotations: {}
+  - from_node: analyze_query
+    to_node: calculate_risk_exec
+    condition:
+      expression: contains(output, 'calculate_risk')
+    metadata:
+      data: {}
+      _annotations: {}
+  - from_node: calculate_risk_exec
+    to_node: format_response
+    condition:
+      trigger: success
+      expression: null
+      route: null
+    metadata:
+      data: {}
+      _annotations: {}
+  metadata:
+    data: {}
+    _annotations: {}
+tools:
+- name: doc_search
+  description: Search indexed documents for answers.
+  protocol: mcp
+  config:
+    command: mcp-doc-search
+  input_schema: null
+  output_schema: null
+  metadata:
+    data: {}
+    _annotations: {}
+- name: risk_calculator
+  description: Compute risk scores for a portfolio or request.
+  protocol: mcp
+  config:
+    command: mcp-risk-calc
+  input_schema: null
+  output_schema: null
+  metadata:
+    data: {}
+    _annotations: {}
+routers: []
+policies: []
+metadata:
+  data: {}
+  _annotations: {}
