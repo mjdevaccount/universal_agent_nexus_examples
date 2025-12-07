@@ -1,0 +1,99 @@
+name: research-assistant
+version: "1.0.0"
+description: "Local research assistant with embeddings-based retrieval"
+
+graphs:
+  - name: main
+    entry_node: research_router
+
+    nodes:
+      - id: research_router
+        kind: router
+        label: "Research Intent Router"
+        config:
+          llm: "local://qwen2.5-32b"
+          system_message: |
+            You are a research assistant. Analyze the user's research query.
+
+            Respond with ONE of:
+            - "search_papers" (find academic papers)
+            - "analyze_document" (analyze uploaded document)
+            - "literature_review" (synthesize multiple sources)
+
+      - id: search_papers_exec
+        kind: tool
+        tool_ref: arxiv_search
+        label: "Search arXiv"
+
+      - id: analyze_doc_exec
+        kind: tool
+        tool_ref: document_analyzer
+        label: "Analyze Document"
+
+      - id: review_exec
+        kind: tool
+        tool_ref: literature_reviewer
+        label: "Generate Literature Review"
+
+      - id: format_results
+        kind: task
+        label: "Format Results"
+        config:
+          prompt: |
+            Format the research results for the user:
+            {results}
+
+    edges:
+      - from_node: research_router
+        to_node: search_papers_exec
+        condition:
+          expression: "contains(output, 'search_papers')"
+
+      - from_node: research_router
+        to_node: analyze_doc_exec
+        condition:
+          expression: "contains(output, 'analyze_document')"
+
+      - from_node: research_router
+        to_node: review_exec
+        condition:
+          expression: "contains(output, 'literature_review')"
+
+      - from_node: search_papers_exec
+        to_node: format_results
+      - from_node: analyze_doc_exec
+        to_node: format_results
+      - from_node: review_exec
+        to_node: format_results
+
+tools:
+  - name: arxiv_search
+    protocol: mcp
+    config:
+      command: "python"
+      args:
+        - "-m"
+        - "research_agent.tools.arxiv_server"
+      env:
+        DB_PATH: "/data/papers.sqlite"
+        EMBEDDING_MODEL: "all-minilm-l6-v2"
+
+  - name: document_analyzer
+    protocol: mcp
+    config:
+      command: "python"
+      args:
+        - "-m"
+        - "research_agent.tools.document_analyzer"
+      env:
+        EMBEDDINGS_PORT: "8001"
+
+  - name: literature_reviewer
+    protocol: mcp
+    config:
+      command: "python"
+      args:
+        - "-m"
+        - "research_agent.tools.arxiv_server"
+      env:
+        MODE: "synthesis"
