@@ -20,6 +20,7 @@ class DynamicCSVToolInjector(DefaultIRVisitor):
             # Create new tool definition
             tool = ToolIR(
                 name=f"query_{file_name}",
+                description=f"Query and analyze CSV data from {file_name}",
                 protocol="mcp",
                 config={
                     "command": "mcp-csv-query-server",

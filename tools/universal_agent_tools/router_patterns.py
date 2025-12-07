@@ -88,6 +88,7 @@ def build_decision_agent_manifest(
     return ManifestIR(
         name=agent_name,
         version=version,
+        description=f"Decision router agent with {len(routes)} routing paths",
         graphs=[graph],
         tools=tools or [],
     )
