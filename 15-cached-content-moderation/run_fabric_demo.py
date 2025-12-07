@@ -22,7 +22,7 @@ from universal_agent_nexus.ir.pass_manager import create_default_pass_manager, O
 from universal_agent_nexus.adapters.langgraph import LangGraphRuntime
 
 # Cache Fabric imports
-from shared.cache_fabric import create_cache_fabric, ContextScope
+from shared.cache_fabric import ContextScope, resolve_fabric_from_env
 from shared.cache_fabric.nexus_integration import store_manifest_contexts, get_router_prompt_from_fabric
 from shared.cache_fabric.runtime_integration import track_execution_with_fabric, record_feedback_to_fabric
 from universal_agent_tools.observability_helper import setup_observability, trace_runtime_execution
@@ -33,20 +33,15 @@ async def main():
     obs_enabled = setup_observability("cached-content-moderation")
     
     # Determine backend from environment or default to memory
-    backend = os.getenv("CACHE_BACKEND", "memory")
-    
+    fabric, fabric_meta = resolve_fabric_from_env()
+    backend = fabric_meta["backend"]
+
     if backend == "redis":
-        redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
-        print(f"🔴 Using Redis backend: {redis_url}")
-        fabric = create_cache_fabric("redis", redis_url=redis_url)
+        print(f"🔴 Using Redis backend: {fabric_meta['redis_url']}")
     elif backend == "vector":
-        # For vector backend, you'd need an embedding function
-        # This is a placeholder - in production, use sentence-transformers
-        print("🔍 Vector backend requires embedding_fn - using memory instead")
-        fabric = create_cache_fabric("memory")
+        print(f"🔍 Using Vector backend: {fabric_meta['vector_url']}")
     else:
         print("💾 Using In-Memory backend (development)")
-        fabric = create_cache_fabric("memory")
     
     # === PHASE 1: NEXUS COMPILER INTEGRATION ===
     print("\n" + "="*60)
