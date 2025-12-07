@@ -6,7 +6,7 @@
 
 **Learn by doing: content moderation, data pipelines, chatbots, research assistants, interactive playground, and migration guides.**
 
-[![Examples](https://img.shields.io/badge/examples-8-blue.svg)](.)
+[![Examples](https://img.shields.io/badge/examples-12-blue.svg)](.)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 </div>
@@ -174,6 +174,94 @@ python mcp_servers/filesystem/server.py &
 python mcp_servers/git/server.py &
 # Run agent
 python runtime/agent_runtime.py
+```
+
+---
+
+### **9. Autonomous Flow** ([09-autonomous-flow/](09-autonomous-flow/)) 🛰️
+**Dynamic Tool Discovery + Regenerated Manifests**
+
+Autonomous agent that discovers MCP tools at runtime, regenerates its manifest, and executes workflows without manual wiring.
+
+- ✅ Tool discovery and registry
+- ✅ LangGraph runtime with regenerated manifests
+- ✅ Ollama (llama3.2) for routing and planning
+- ✅ Qdrant, filesystem, Git, and GitHub MCP integrations
+
+**Perfect for:** Self-directed automation that adapts to new tools.
+
+**Try it:**
+```bash
+cd 09-autonomous-flow
+python runtime/autonomous_runtime.py
+```
+
+---
+
+### **10. Local LLM + Tool Server Patterns** ([10-local-llm-tool-servers/](10-local-llm-tool-servers/)) 🧠
+**Single-Decision Routers, Nested Scaffolding, Tenant Isolation, and Dynamic Tools**
+
+Architecture patterns for running Qwen2.5-sized LLMs locally with MCP tool servers. Includes a production-style research agent with embeddings and Postgres-free LangGraph runtime.
+
+- ✅ Pattern A: Single-decision router manifest
+- ✅ Pattern B: CompilerBuilder nested scaffolding
+- ✅ Pattern C: Tenant-aware enrichment handlers
+- ✅ Pattern D: Dynamic CSV tool generation via IR visitor
+- ✅ Research agent stack (Ollama + SQLite + sentence-transformers)
+- ✅ Reusable toolkit extracted to `tools/universal_agent_tools`
+
+**Perfect for:** Building cost-efficient, locally executed multi-agent systems with strict tool routing.
+
+**Try it:**
+```bash
+cd 10-local-llm-tool-servers/research_agent
+ollama pull qwen2.5:32b
+pip install -r ../requirements.txt
+python run_local.py
+```
+
+---
+
+### **11. N-Decision Router (Reusable Routing Helpers)** ([11-n-decision-router/](11-n-decision-router/)) 🛣️
+**Declarative router wiring with N decision paths plus dynamic tool injection**
+
+Generalize the single-decision pattern into an N-decision agent, built from reusable route definitions. Demonstrates how router wiring, tool edges, and dynamic tool injection can live in the shared `tools/universal_agent_tools` library.
+
+- ✅ RouteDefinition-driven manifest builder (no manual YAML wiring)
+- ✅ Plug-and-play MCP tool definitions per route
+- ✅ Dynamic CSV tool injection layered onto the same router
+- ✅ Minimal dependencies (YAML generation + Nexus IR)
+
+**Perfect for:** Teams that want to grow from 1 → N router decisions without rewriting manifests.
+
+**Try it:**
+```bash
+cd 11-n-decision-router
+pip install -r requirements.txt
+python generate_manifest.py
+nexus compile manifest.yaml --target langgraph --output agent.py
+```
+
+---
+
+### **12. Self-Modifying Agent (Runtime Tool Generation)** ([12-self-modifying-agent/](12-self-modifying-agent/)) 🔁
+**Evolve manifests from failure logs with reusable helpers**
+
+Generate a repair tool from repeated failures, wire it into the router, and recompile—all powered by the shared `SelfModifyingAgent` abstraction.
+
+- ✅ Execution-log driven tool synthesis
+- ✅ Deterministic tool definitions (promotion-safe)
+- ✅ Router wiring that preserves single-decision semantics while adding new branches
+- ✅ End-to-end regeneration of an evolved agent file
+
+**Perfect for:** Systems that must heal themselves when new failure patterns appear.
+
+**Try it:**
+```bash
+cd 12-self-modifying-agent
+pip install -r requirements.txt
+python generate_manifest.py
+python self_modifying_runtime.py
 ```
 
 ---
