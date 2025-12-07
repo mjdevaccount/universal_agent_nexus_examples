@@ -38,10 +38,10 @@ def build_base_manifest():
     ]
 
     tools = [
-        ToolIR(name="data_quality_tool", protocol="mcp", config={"command": "mcp-data-quality"}),
-        ToolIR(name="growth_experiment_tool", protocol="mcp", config={"command": "mcp-growth-experiments"}),
-        ToolIR(name="customer_support_tool", protocol="mcp", config={"command": "mcp-support"}),
-        ToolIR(name="reporting_tool", protocol="mcp", config={"command": "mcp-reporting"}),
+        ToolIR(name="data_quality_tool", description="Detect data anomalies and quality issues", protocol="mcp", config={"command": "mcp-data-quality"}),
+        ToolIR(name="growth_experiment_tool", description="Run A/B tests and growth experiments", protocol="mcp", config={"command": "mcp-growth-experiments"}),
+        ToolIR(name="customer_support_tool", description="Handle customer support requests and triage", protocol="mcp", config={"command": "mcp-support"}),
+        ToolIR(name="reporting_tool", description="Generate reports and KPI summaries", protocol="mcp", config={"command": "mcp-reporting"}),
     ]
 
     return build_decision_agent_manifest(

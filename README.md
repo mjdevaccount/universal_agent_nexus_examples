@@ -244,6 +244,7 @@ nexus compile manifest.yaml --target langgraph --output agent.py
 
 ---
 
+
 ### **12. Self-Modifying Agent (Runtime Tool Generation)** ([12-self-modifying-agent/](12-self-modifying-agent/)) 🔁
 **Evolve manifests from failure logs with reusable helpers**
 
@@ -262,32 +263,6 @@ cd 12-self-modifying-agent
 pip install -r requirements.txt
 python generate_manifest.py
 python self_modifying_runtime.py
-```
-
----
-
-### **13. Practical Quickstart (Minimal Abstractions)** ([13-practical-quickstart/](13-practical-quickstart/)) ⚡
-**Smallest possible end-to-end agent using shared primitives**
-
-Single-decision customer-support router built with the shared `RouteDefinition` helper, plus in-memory MCP stubs via `DictToolServer`. Minimal files, maximum reuse.
-
-- ✅ Manifest generated from a handful of route definitions
-- ✅ Zero-boilerplate MCP servers (dictionary-dispatched)
-- ✅ Lightweight runtime harness (no Postgres, no extra scaffolding)
-
-**Perfect for:** Teams that want a copy-paste starter showing the abstractions in their simplest form.
-
-**Try it:**
-```bash
-cd 13-practical-quickstart
-pip install -r requirements.txt
-python generate_manifest.py
-# start MCP stubs
-python servers.py --server billing
-python servers.py --server tech
-python servers.py --server account
-# run agent
-python run_agent.py
 ```
 
 ---

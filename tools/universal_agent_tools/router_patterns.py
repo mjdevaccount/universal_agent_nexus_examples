@@ -24,7 +24,6 @@ def build_decision_agent_manifest(
     formatter_prompt: str = "Format the tool result for the user: {result}",
     tools: Optional[List[ToolIR]] = None,
     version: str = "1.0.0",
-    description: str = "Decision router with tool branches.",
 ) -> ManifestIR:
     """Create a manifest with a single decision node that can route to N tools.
 
@@ -89,7 +88,7 @@ def build_decision_agent_manifest(
     return ManifestIR(
         name=agent_name,
         version=version,
-        description=description,
+        description=f"Decision router agent with {len(routes)} routing paths",
         graphs=[graph],
         tools=tools or [],
     )
