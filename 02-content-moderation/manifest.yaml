@@ -9,16 +9,8 @@ graphs:
       - id: risk_assessment
         kind: router
         label: "AI Risk Classifier"
-        router_ref: risk_router
-        config:
-          model: "local://qwen3"
-          prompt: |
-            Classify the risk level of this content:
-            {content}
-            
-            Categories: safe, low, medium, high, critical
-            
-            Return JSON: {"risk_level": "...", "reason": "..."}
+        router:
+          name: risk_router
       
       - id: auto_approve
         kind: task
@@ -47,35 +39,26 @@ graphs:
           reason: "violates_policy"
     
     edges:
+      # Use expression conditions with last_response (router output stored in context)
       - from_node: risk_assessment
         to_node: auto_approve
         condition:
-          trigger: success
-          route: "safe"
+          expression: "last_response.strip().lower() == 'safe'"
       
       - from_node: risk_assessment
         to_node: policy_check
         condition:
-          trigger: success
-          route: "low"
+          expression: "last_response.strip().lower() == 'low'"
       
       - from_node: risk_assessment
         to_node: human_review
         condition:
-          trigger: success
-          route: "medium"
+          expression: "last_response.strip().lower() == 'medium'"
       
       - from_node: risk_assessment
         to_node: auto_reject
         condition:
-          trigger: success
-          route: "high"
-      
-      - from_node: risk_assessment
-        to_node: auto_reject
-        condition:
-          trigger: success
-          route: "critical"
+          expression: "last_response.strip().lower() == 'high' or last_response.strip().lower() == 'critical'"
       
       - from_node: policy_check
         to_node: auto_approve
@@ -92,11 +75,10 @@ graphs:
 routers:
   - name: risk_router
     strategy: llm
-    system_message: "You are a content moderation AI. Classify content risk levels."
-    model_candidates:
-      - "local://qwen3"
-      - "local://qwen3"
-    default_model: "local://qwen3"
+    system_message: |
+      You classify content risk. Respond with ONE word only: safe, low, medium, high, or critical.
+      No explanations, no JSON, just the word.
+    default_model: "ollama://qwen3:8b"
 
 tools:
   - name: policy_validator

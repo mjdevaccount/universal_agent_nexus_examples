@@ -22,16 +22,24 @@ async def main():
         postgres_url=None,
         enable_checkpointing=False,
     )
-    await runtime.initialize(manifest)
+    await runtime.initialize(manifest, graph_name="moderate_content")
 
     # Load test content if available
     test_content_path = Path(__file__).parent / "test_content.json"
     if test_content_path.exists():
         with open(test_content_path) as f:
             test_data = json.load(f)
-            input_data = {"content": test_data.get("content", "This is a test post")}
+            content = test_data.get("content", "This is a test post")
     else:
-        input_data = {"content": "This is a test post"}
+        content = "This is a test post"
+    
+    # Router expects context.query - make it simple and clear
+    input_data = {
+        "context": {
+            "query": f"Content to classify: {content}\n\nRespond with ONE word: safe, low, medium, high, or critical.",
+            "content": content
+        }
+    }
 
     # Execute with tracing
     if obs_enabled:
