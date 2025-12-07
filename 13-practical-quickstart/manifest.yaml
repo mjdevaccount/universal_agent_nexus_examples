@@ -1,6 +1,6 @@
 name: customer-support
-version: 1.0.0
-description: Minimal single-decision support router backed by MCP stubs.
+version: 2.0.0
+description: Minimal single-decision support router backed by MCP stubs using v3.0.1 patterns
 graphs:
 - name: main
   entry_node: analyze_query
@@ -8,28 +8,7 @@ graphs:
   - id: analyze_query
     kind: router
     label: Decision Router
-    description: null
-    config:
-      system_message: '
-
-        Classify customer issue as:
-
-        - "billing" (payment/subscription)
-
-        - "technical" (product problems)
-
-        - "account" (login/access)
-
-        Respond with ONE word only.
-
-        '
-      llm: local://qwen3
-    source_location: null
-    metadata:
-      data: {}
-      _annotations: {}
-    router_ref: null
-    tool_ref: null
+    router_ref: decision_router
   - id: billing_exec
     kind: tool
     label: Query Billing System
@@ -64,66 +43,28 @@ graphs:
     router_ref: null
     tool_ref: account_service
   - id: format_response
-    kind: task
+    kind: router
     label: Format Response
-    description: null
-    config:
-      prompt: 'Reply to customer issue: {result}'
-    source_location: null
-    metadata:
-      data: {}
-      _annotations: {}
-    router_ref: null
-    tool_ref: null
+    router_ref: formatter_router
   edges:
   - from_node: analyze_query
     to_node: billing_exec
     condition:
-      expression: contains(output, 'billing')
-    metadata:
-      data: {}
-      _annotations: {}
+      route: "billing"
   - from_node: billing_exec
     to_node: format_response
-    condition:
-      trigger: success
-      expression: null
-      route: null
-    metadata:
-      data: {}
-      _annotations: {}
   - from_node: analyze_query
     to_node: technical_exec
     condition:
-      expression: contains(output, 'technical')
-    metadata:
-      data: {}
-      _annotations: {}
+      route: "technical"
   - from_node: technical_exec
     to_node: format_response
-    condition:
-      trigger: success
-      expression: null
-      route: null
-    metadata:
-      data: {}
-      _annotations: {}
   - from_node: analyze_query
     to_node: account_exec
     condition:
-      expression: contains(output, 'account')
-    metadata:
-      data: {}
-      _annotations: {}
+      route: "account"
   - from_node: account_exec
     to_node: format_response
-    condition:
-      trigger: success
-      expression: null
-      route: null
-    metadata:
-      data: {}
-      _annotations: {}
   metadata:
     data: {}
     _annotations: {}
@@ -170,7 +111,23 @@ tools:
   metadata:
     data: {}
     _annotations: {}
-routers: []
+routers:
+  - name: decision_router
+    strategy: llm
+    system_message: |
+      Classify customer issue as:
+      - "billing" (payment/subscription)
+      - "technical" (product problems)
+      - "account" (login/access)
+      
+      Respond with ONE word only.
+    default_model: "ollama://qwen3:8b"
+  - name: formatter_router
+    strategy: llm
+    system_message: |
+      Reply to the customer issue in a helpful, empathetic way.
+      Make it clear, actionable, and professional.
+    default_model: "ollama://qwen3:8b"
 policies: []
 metadata:
   data: {}
