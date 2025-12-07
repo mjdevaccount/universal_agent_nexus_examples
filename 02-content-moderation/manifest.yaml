@@ -1,108 +1,223 @@
 name: content-moderation-pipeline
-version: "1.0.0"
-description: "Multi-stage content moderation with AI risk assessment"
+version: "2.0.0"
+description: "Enterprise content moderation with AI risk assessment, policy validation, and escalation workflows"
 
 graphs:
   - name: moderate_content
     entry_node: risk_assessment
     nodes:
+      # Initial AI risk classification
       - id: risk_assessment
         kind: router
         label: "AI Risk Classifier"
-        router:
-          name: risk_router
+        router_ref: risk_router
       
+      # Safe content - auto approve with audit
       - id: auto_approve
         kind: task
-        label: "Auto Approve"
+        label: "Auto Approve & Publish"
         config:
           action: "approve"
           status: "published"
+          notify_author: true
       
+      # Low risk - policy validation required
       - id: policy_check
         kind: tool
-        label: "Policy Validator"
+        label: "Policy Compliance Validator"
         tool_ref: policy_validator
       
+      # Medium risk - human review queue
       - id: human_review
         kind: task
         label: "Escalate to Human Review"
         config:
           action: "escalate"
           queue: "moderation_queue"
+          priority: "normal"
+          sla_hours: 24
       
+      # High risk - immediate rejection with appeal option
       - id: auto_reject
         kind: task
-        label: "Auto Reject"
+        label: "Auto Reject (High Risk)"
         config:
           action: "reject"
-          reason: "violates_policy"
+          reason: "high_risk_violation"
+          allow_appeal: true
+          notify_author: true
+      
+      # Critical risk - immediate action + admin alert
+      - id: critical_action
+        kind: task
+        label: "Critical Content Handler"
+        config:
+          action: "critical_reject"
+          reason: "critical_violation"
+          immediate_block: true
+          notify_admins: true
+          escalate_to_legal: true
+      
+      # Audit logging for compliance
+      - id: audit_log
+        kind: task
+        label: "Audit Log Decision"
+        config:
+          action: "log_decision"
+          retention_days: 365
+      
+      # Policy check passed - approve
+      - id: policy_approve
+        kind: task
+        label: "Policy Check Passed - Approve"
+        config:
+          action: "approve"
+          status: "published"
+          notify_author: true
+      
+      # Policy check failed - escalate
+      - id: policy_failed
+        kind: task
+        label: "Policy Violation - Escalate"
+        config:
+          action: "escalate"
+          queue: "policy_violation_queue"
+          priority: "high"
+          sla_hours: 12
     
     edges:
-      # Use expression conditions with last_response (router output stored in context)
+      # Risk assessment routing (v3.0.0 route key matching)
       - from_node: risk_assessment
         to_node: auto_approve
         condition:
-          expression: "last_response.strip().lower() == 'safe'"
+          route: "safe"
       
       - from_node: risk_assessment
         to_node: policy_check
         condition:
-          expression: "last_response.strip().lower() == 'low'"
+          route: "low"
       
       - from_node: risk_assessment
         to_node: human_review
         condition:
-          expression: "last_response.strip().lower() == 'medium'"
+          route: "medium"
       
       - from_node: risk_assessment
         to_node: auto_reject
         condition:
-          expression: "last_response.strip().lower() == 'high' or last_response.strip().lower() == 'critical'"
+          route: "high"
       
+      - from_node: risk_assessment
+        to_node: critical_action
+        condition:
+          route: "critical"
+      
+      # Policy check outcomes
       - from_node: policy_check
-        to_node: auto_approve
+        to_node: policy_approve
         condition:
           trigger: success
-          expression: "result.compliant == true"
+          route: "compliant"
       
       - from_node: policy_check
-        to_node: human_review
+        to_node: policy_failed
         condition:
           trigger: success
-          expression: "result.compliant == false"
+          route: "violation"
+      
+      # All paths converge to audit logging
+      - from_node: auto_approve
+        to_node: audit_log
+      
+      - from_node: policy_approve
+        to_node: audit_log
+      
+      - from_node: human_review
+        to_node: audit_log
+      
+      - from_node: auto_reject
+        to_node: audit_log
+      
+      - from_node: critical_action
+        to_node: audit_log
+      
+      - from_node: policy_failed
+        to_node: audit_log
 
 routers:
   - name: risk_router
     strategy: llm
     system_message: |
-      You classify content risk. Respond with ONE word only: safe, low, medium, high, or critical.
+      You are a content moderation AI classifier for a social media platform.
+      
+      Analyze the content and classify risk level. Consider:
+      - Hate speech, harassment, threats
+      - Violence, graphic content
+      - Illegal content, drugs, weapons
+      - Spam, scams, misinformation
+      - Copyright violations
+      - Sexual content appropriateness
+      
+      Risk Levels:
+      - "safe": Clean, appropriate content
+      - "low": Minor concerns, needs policy check
+      - "medium": Moderate risk, requires human review
+      - "high": Serious violation, auto-reject with appeal
+      - "critical": Illegal, dangerous, or platform-threatening content
+      
+      Respond with ONE word only: safe, low, medium, high, or critical.
       No explanations, no JSON, just the word.
     default_model: "ollama://qwen3:8b"
 
 tools:
   - name: policy_validator
-    description: "Validates content against community policies"
+    description: "Validates content against current community policies and terms of service"
     protocol: "http"
     config:
       endpoint: "https://api.example.com/validate-policy"
       method: "POST"
       headers:
         Content-Type: "application/json"
+        X-API-Key: "${POLICY_API_KEY}"
     input_schema:
       type: object
       properties:
         content:
           type: string
+          description: "The content text to validate"
+        content_type:
+          type: string
+          description: "Type of content (post, comment, message, etc.)"
         policy_version:
           type: string
+          description: "Policy version to check against (defaults to latest)"
+        user_tier:
+          type: string
+          description: "User account tier (standard, verified, premium)"
     output_schema:
       type: object
       properties:
         compliant:
           type: boolean
+          description: "Whether content passes policy check"
         violations:
           type: array
+          items:
+            type: object
+            properties:
+              rule_id:
+                type: string
+              severity:
+                type: string
+                enum: [minor, moderate, severe]
+              description:
+                type: string
+        policy_version:
+          type: string
+          description: "Version of policy used for validation"
+        checked_at:
+          type: string
+          format: date-time
 
 policies: []
 
