@@ -60,15 +60,17 @@ def build_manifest():
         ),
     ]
 
-    return build_decision_agent_manifest(
+    manifest = build_decision_agent_manifest(
         agent_name="customer-support",
         system_message=SYSTEM_MESSAGE,
         llm="local://qwen2.5-32b",
         routes=routes,
         formatter_prompt="Reply to customer issue: {result}",
         tools=tools,
-        description="Minimal single-decision support router backed by MCP stubs.",
     )
+    # Set description manually
+    manifest.description = "Minimal single-decision support router backed by MCP stubs."
+    return manifest
 
 
 def write_manifest(path: str = "manifest.yaml") -> None:
