@@ -1,0 +1,99 @@
+name: research-director
+version: "1.0.0"
+description: |
+  Single-decision research orchestrator.
+  Makes ONE choice about which research path to take,
+  then delegates to specialized tools or sub-agents.
+
+graphs:
+  - name: main
+    entry_node: analyze_query
+
+    nodes:
+      # SINGLE ROUTER: Classify query intent
+      - id: analyze_query
+        kind: router
+        label: "Research Intent Classifier"
+        config:
+          llm: "local://qwen2.5-32b"
+          system_message: |
+            You are a research director. Analyze the user's research query.
+            Respond with ONE of:
+            - "financial_analysis" (stocks, companies, markets)
+            - "technical_research" (papers, source code, benchmarks)
+            - "business_research" (market trends, competitors)
+
+            Respond with ONLY the category name.
+
+      # PATH 1: Financial analysis
+      - id: financial_tool_exec
+        kind: tool
+        tool_ref: financial_analyzer
+        label: "Execute Financial Query"
+
+      # PATH 2: Technical research
+      - id: technical_tool_exec
+        kind: tool
+        tool_ref: technical_researcher
+        label: "Execute Technical Query"
+
+      # PATH 3: Business research
+      - id: business_tool_exec
+        kind: tool
+        tool_ref: business_researcher
+        label: "Execute Business Query"
+
+      # Convergence: Format results
+      - id: format_response
+        kind: task
+        label: "Format Results"
+        config:
+          prompt: |
+            Format the research results for the user:
+            {research_output}
+
+    edges:
+      # Router decision edges
+      - from_node: analyze_query
+        to_node: financial_tool_exec
+        condition:
+          expression: "contains(output, 'financial_analysis')"
+
+      - from_node: analyze_query
+        to_node: technical_tool_exec
+        condition:
+          expression: "contains(output, 'technical_research')"
+
+      - from_node: analyze_query
+        to_node: business_tool_exec
+        condition:
+          expression: "contains(output, 'business_research')"
+
+      # Convergence edges
+      - from_node: financial_tool_exec
+        to_node: format_response
+
+      - from_node: technical_tool_exec
+        to_node: format_response
+
+      - from_node: business_tool_exec
+        to_node: format_response
+
+tools:
+  - name: financial_analyzer
+    protocol: mcp
+    config:
+      command: mcp-finance-server
+      args: ["--data-dir", "/data/financial"]
+
+  - name: technical_researcher
+    protocol: mcp
+    config:
+      command: mcp-research-server
+      args: ["--embeddings", "local", "--model", "all-minilm"]
+
+  - name: business_researcher
+    protocol: mcp
+    config:
+      command: mcp-market-server
+      args: ["--cache-dir", "/cache"]

@@ -1,0 +1,104 @@
+name: n-decision-router
+version: 1.0.0
+description: Decision router agent with 4 routing paths
+graphs:
+- name: main
+  entry_node: analyze_query
+  nodes:
+  - id: analyze_query
+    kind: router
+    label: Decision Router
+    config:
+      system_message: 'You are the routing coordinator. Classify the user''s request
+        into one of: data_quality, growth_experiment, customer_support, reporting.
+        Respond with only the category name.'
+      llm: local://qwen2.5-32b
+  - id: data_quality_exec
+    kind: tool
+    label: Execute Data Quality
+    tool_ref: data_quality_tool
+    config: {}
+  - id: growth_experiment_exec
+    kind: tool
+    label: Execute Growth Experiment
+    tool_ref: growth_experiment_tool
+    config: {}
+  - id: customer_support_exec
+    kind: tool
+    label: Execute Customer Support
+    tool_ref: customer_support_tool
+    config: {}
+  - id: reporting_exec
+    kind: tool
+    label: Execute Reporting
+    tool_ref: reporting_tool
+    config: {}
+  - id: format_response
+    kind: task
+    label: Format Response
+    config:
+      prompt: 'Summarize the tool output clearly for the user:
+
+        {result}'
+  edges:
+  - from_node: analyze_query
+    to_node: data_quality_exec
+    condition:
+      expression: contains(output, 'data_quality')
+  - from_node: data_quality_exec
+    to_node: format_response
+    condition: {}
+  - from_node: analyze_query
+    to_node: growth_experiment_exec
+    condition:
+      expression: contains(output, 'growth_experiment')
+  - from_node: growth_experiment_exec
+    to_node: format_response
+    condition: {}
+  - from_node: analyze_query
+    to_node: customer_support_exec
+    condition:
+      expression: contains(output, 'customer_support')
+  - from_node: customer_support_exec
+    to_node: format_response
+    condition: {}
+  - from_node: analyze_query
+    to_node: reporting_exec
+    condition:
+      expression: contains(output, 'reporting')
+  - from_node: reporting_exec
+    to_node: format_response
+    condition: {}
+tools:
+- name: data_quality_tool
+  description: Detect data anomalies and quality issues
+  protocol: mcp
+  config:
+    command: mcp-data-quality
+    args:
+    - --mode
+    - anomaly
+- name: growth_experiment_tool
+  description: Run A/B tests and growth experiments
+  protocol: mcp
+  config:
+    command: mcp-growth-experiments
+    args:
+    - --llm
+    - local://qwen2.5-32b
+- name: customer_support_tool
+  description: Handle customer support requests and triage
+  protocol: mcp
+  config:
+    command: mcp-support
+    args:
+    - --kb
+    - /data/kb.sqlite
+- name: reporting_tool
+  description: Generate reports and KPI summaries
+  protocol: mcp
+  config:
+    command: mcp-reporting
+    args:
+    - --metrics
+    - weekly
