@@ -15,8 +15,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict
 import asyncio
+import sys
+from pathlib import Path
+
+# Add parent directories for imports
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from llm_provider import create_provider
+
+# Setup observability
+try:
+    from universal_agent_tools.observability_helper import setup_observability
+    setup_observability("playground-simulation")
+except ImportError:
+    pass
 
 app = FastAPI(title="Agent Playground API")
 

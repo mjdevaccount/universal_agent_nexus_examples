@@ -12,8 +12,20 @@ from pydantic import BaseModel
 from typing import List, Dict, Optional
 import asyncio
 import json
+import sys
+from pathlib import Path
+
+# Add parent directories for imports
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from market_engine import MarketSimulator, CompanyType
+
+# Setup observability
+try:
+    from universal_agent_tools.observability_helper import setup_observability
+    setup_observability("innovation-waves")
+except ImportError:
+    pass
 
 app = FastAPI(
     title="Innovation Waves API",

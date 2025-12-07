@@ -22,6 +22,16 @@ from universal_agent_tools.ollama_tools import (
     parse_tool_calls_from_content,
 )
 
+# Try to import observability helper
+try:
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+    from universal_agent_tools.observability_helper import setup_observability
+    OBSERVABILITY_AVAILABLE = True
+except ImportError:
+    OBSERVABILITY_AVAILABLE = False
+
 
 # ===== STATE =====
 
@@ -180,6 +190,10 @@ def create_agent_graph(tools: list[BaseTool], llm):
 
 def main():
     """Main runtime - demonstrates the full stack."""
+    # Setup observability
+    if OBSERVABILITY_AVAILABLE:
+        setup_observability("local-agent-runtime")
+    
     print("🚀 Local Agent Runtime - December 2025 Stack")
     print("=" * 60)
     

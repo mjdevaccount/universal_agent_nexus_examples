@@ -23,6 +23,14 @@ from tools.registry.tool_registry import get_registry
 from agent_runtime import MCPToolLoader, create_agent_graph, create_llm_with_tools
 from langchain_core.messages import HumanMessage
 
+# Try to import observability helper
+try:
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+    from universal_agent_tools.observability_helper import setup_observability
+    OBSERVABILITY_AVAILABLE = True
+except ImportError:
+    OBSERVABILITY_AVAILABLE = False
+
 
 def load_regenerated_manifest():
     """Load the regenerated manifest."""
@@ -83,6 +91,10 @@ def create_runtime_from_manifest(manifest):
 
 def main():
     """Main runtime execution."""
+    # Setup observability
+    if OBSERVABILITY_AVAILABLE:
+        setup_observability("autonomous-flow")
+    
     print("🤖 AutonomousFlow Runtime")
     print("=" * 60)
     

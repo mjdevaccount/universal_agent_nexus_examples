@@ -1,4 +1,4 @@
-"""Run the minimal customer-support agent using LangGraphRuntime."""
+"""Run the support chatbot agent using LangGraphRuntime."""
 
 import asyncio
 import sys
@@ -13,7 +13,7 @@ from universal_agent_tools.observability_helper import setup_observability, trac
 
 async def main():
     # Setup observability
-    obs_enabled = setup_observability("practical-quickstart")
+    obs_enabled = setup_observability("support-chatbot")
     
     manifest = load_manifest("manifest.yaml")
 
@@ -25,7 +25,7 @@ async def main():
 
     # Execute with tracing
     if obs_enabled:
-        async with trace_runtime_execution("support-001", graph_name="main"):
+        async with trace_runtime_execution("support-001", graph_name="support_conversation"):
             result = await runtime.execute(
                 execution_id="support-001",
                 input_data={"context": {"query": "I can't log into my account"}},
@@ -36,8 +36,9 @@ async def main():
             input_data={"context": {"query": "I can't log into my account"}},
         )
     
-    print(f"✅ Result: {result['context'].get('last_response')}")
+    print(f"✅ Result: {result.get('context', {}).get('last_response', result)}")
 
 
 if __name__ == "__main__":
     asyncio.run(main())
+
