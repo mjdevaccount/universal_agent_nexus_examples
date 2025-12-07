@@ -1,0 +1,16 @@
+# Cache Fabric Layer dependencies
+universal-agent-nexus[langgraph]>=3.0.1
+langchain-core
+opentelemetry-api
+opentelemetry-sdk
+opentelemetry-exporter-otlp
+
+# Optional: Redis backend (for production)
+# Uncomment to use Redis:
+# redis[hiredis]>=5.0.0
+
+# Optional: Vector DB backend (for semantic search)
+# Uncomment to use Qdrant:
+# qdrant-client>=1.7.0
+# sentence-transformers>=2.2.0
+
