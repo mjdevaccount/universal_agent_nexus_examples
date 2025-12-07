@@ -468,5 +468,492 @@ curl http://localhost:8001/health
 
 ---
 
-**Last Updated:** Example 09 implementation - Discovery and regeneration working
+---
+
+## v3.0.0 Migration Guide
+
+### Breaking Changes
+
+**1. MessagesState (Replaces Custom AgentState)**
+
+v3.0.0 uses LangGraph's built-in `MessagesState` instead of custom `AgentState` TypedDict.
+
+**Before (v2.x):**
+```python
+class AgentState(TypedDict):
+    context: Dict[str, Any]
+    history: Annotated[list[BaseMessage], operator.add]
+    current_node: str
+    error: Optional[str]
+
+input_data = {
+    "context": {"query": "..."},
+    "history": []
+}
+```
+
+**After (v3.0.0):**
+```python
+from langchain_core.messages import HumanMessage
+
+input_data = {
+    "messages": [
+        HumanMessage(content="Content to classify: ...")
+    ]
+}
+```
+
+**2. Route Keys (Replaces Expression Evaluation)**
+
+v3.0.0 uses simple route key matching instead of `simpleeval` expression evaluation.
+
+**Before (v2.x):**
+```yaml
+edges:
+  - from_node: router
+    to_node: action_a
+    condition:
+      expression: "last_response.strip().lower() == 'safe'"
+```
+
+**After (v3.0.0):**
+```yaml
+edges:
+  - from_node: router
+    to_node: action_a
+    condition:
+      route: "safe"  # Simple substring matching
+```
+
+**How Route Matching Works:**
+- Router returns LLM response (e.g., "safe", "low", "medium")
+- Compiler does case-insensitive substring matching: `route_key.lower() in response.lower()`
+- First match wins
+
+**3. Synchronous Compiler API**
+
+**Before (v2.x):**
+```python
+state_graph = await compiler.compile_async(manifest, graph_name)
+```
+
+**After (v3.0.0):**
+```python
+state_graph = compiler.compile(manifest, graph_name)  # No await
+```
+
+**4. Router Reference Parsing**
+
+Both formats now work in YAML:
+
+```yaml
+# Nested format (standard)
+- id: router_node
+  kind: router
+  router:
+    name: "my_router"
+
+# Flat format (also works in v2.0.5+)
+- id: router_node
+  kind: router
+  router_ref: "my_router"
+```
+
+---
+
+## Standard Runtime Pattern
+
+### Recommended Pattern (v3.0.1+)
+
+All examples should follow this pattern for consistency:
+
+```python
+import asyncio
+import sys
+from pathlib import Path
+
+# Add parent directory for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from langchain_core.messages import HumanMessage
+from universal_agent_nexus.compiler import parse
+from universal_agent_nexus.ir.pass_manager import create_default_pass_manager, OptimizationLevel
+from universal_agent_nexus.adapters.langgraph import LangGraphRuntime
+from universal_agent_tools.observability_helper import setup_observability, trace_runtime_execution
+
+async def main():
+    # 1. Setup observability (one line)
+    obs_enabled = setup_observability("service-name")
+    
+    # 2. Parse manifest
+    ir = parse("manifest.yaml")
+    
+    # 3. Run optimization passes
+    manager = create_default_pass_manager(OptimizationLevel.DEFAULT)
+    ir_optimized = manager.run(ir)
+    
+    # 4. Initialize runtime
+    runtime = LangGraphRuntime(
+        postgres_url=None,
+        enable_checkpointing=False,
+    )
+    await runtime.initialize(ir_optimized, graph_name="main")
+    
+    # 5. Prepare input (MessagesState format)
+    input_data = {
+        "messages": [
+            HumanMessage(content="Your input here")
+        ]
+    }
+    
+    # 6. Execute with tracing
+    if obs_enabled:
+        async with trace_runtime_execution("exec-001", graph_name="main"):
+            result = await runtime.execute(
+                execution_id="exec-001",
+                input_data=input_data,
+            )
+    else:
+        result = await runtime.execute(
+            execution_id="exec-001",
+            input_data=input_data,
+        )
+    
+    # 7. Extract results
+    messages = result.get("messages", [])
+    if messages:
+        last_message = messages[-1]
+        output = getattr(last_message, "content", "")
+        print(f"Result: {output}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+**Key Points:**
+- Always use full compiler pipeline: `parse()` → `PassManager` → `runtime.initialize()`
+- Use `MessagesState` format for input
+- Include observability setup
+- Use `trace_runtime_execution` context manager
+
+---
+
+## Content Moderation Patterns (Example 02)
+
+### Multi-Tier Router Pattern
+
+**Use Case:** Classify content into multiple risk levels with different handling per level.
+
+**Pattern:**
+```yaml
+graphs:
+  - name: moderate_content
+    entry_node: risk_assessment
+    nodes:
+      - id: risk_assessment
+        kind: router
+        router_ref: risk_router
+      
+      # Different handlers per risk level
+      - id: auto_approve      # Safe
+      - id: policy_check      # Low
+      - id: human_review      # Medium
+      - id: auto_reject       # High
+      - id: critical_action  # Critical
+    
+    edges:
+      - from_node: risk_assessment
+        to_node: auto_approve
+        condition:
+          route: "safe"
+      - from_node: risk_assessment
+        to_node: policy_check
+        condition:
+          route: "low"
+      # ... more routes
+
+routers:
+  - name: risk_router
+    strategy: llm
+    system_message: |
+      Classify content risk. Respond with ONE word: safe, low, medium, high, or critical.
+    default_model: "ollama://qwen3:8b"
+```
+
+**Key Learnings:**
+- Router should return single word for simple matching
+- Use descriptive route keys that match LLM output
+- Each risk level gets dedicated handler node
+
+### Convergent Path Pattern
+
+**Use Case:** All execution paths converge to a single node (e.g., audit logging).
+
+**Pattern:**
+```yaml
+edges:
+  # All paths converge to audit_log
+  - from_node: auto_approve
+    to_node: audit_log
+  - from_node: policy_approve
+    to_node: audit_log
+  - from_node: human_review
+    to_node: audit_log
+  - from_node: auto_reject
+    to_node: audit_log
+  - from_node: critical_action
+    to_node: audit_log
+```
+
+**Benefits:**
+- Ensures all decisions are logged
+- Single point for compliance tracking
+- Easy to add post-processing
+
+### Policy Validation Pattern
+
+**Use Case:** Validate content against policies with dual outcomes.
+
+**Pattern:**
+```yaml
+nodes:
+  - id: policy_check
+    kind: tool
+    tool_ref: policy_validator
+  
+  - id: policy_approve
+    kind: task
+    config:
+      action: "approve"
+  
+  - id: policy_failed
+    kind: task
+    config:
+      action: "escalate"
+      queue: "policy_violation_queue"
+
+edges:
+  - from_node: policy_check
+    to_node: policy_approve
+    condition:
+      trigger: success
+      route: "compliant"
+  
+  - from_node: policy_check
+    to_node: policy_failed
+    condition:
+      trigger: success
+      route: "violation"
+```
+
+**Key Points:**
+- Tool returns structured response
+- Route based on tool output
+- Separate handlers for pass/fail
+
+### Escalation Workflow Pattern
+
+**Use Case:** Escalate to human review with priority and SLA tracking.
+
+**Pattern:**
+```yaml
+nodes:
+  - id: human_review
+    kind: task
+    config:
+      action: "escalate"
+      queue: "moderation_queue"
+      priority: "normal"      # normal, high, urgent
+      sla_hours: 24          # Service level agreement
+```
+
+**Variations:**
+- Different queues per risk level
+- Priority based on severity
+- SLA tracking for compliance
+
+---
+
+## Router Patterns
+
+### Single Decision Router
+
+**Pattern:** Router makes ONE decision, routes to N tools.
+
+**Example:** See `tools/universal_agent_tools/router_patterns.py`
+
+```python
+from universal_agent_tools.router_patterns import RouteDefinition, build_decision_agent_manifest
+
+routes = [
+    RouteDefinition(
+        name="financial",
+        tool_ref="financial_analyzer",
+        condition_expression="contains(output, 'financial')"
+    ),
+    RouteDefinition(
+        name="technical",
+        tool_ref="technical_researcher",
+        condition_expression="contains(output, 'technical')"
+    ),
+]
+
+manifest = build_decision_agent_manifest(
+    agent_name="research-director",
+    system_message="Classify query intent...",
+    llm="local://qwen3",
+    routes=routes,
+)
+```
+
+**Note:** `condition_expression` is for v2.x. In v3.0.0, use `route` keys instead.
+
+### Multi-Tier Router (Content Moderation)
+
+**Pattern:** Router classifies into multiple tiers, each with different handling.
+
+**Key Differences:**
+- More than 2-3 routes (typically 5+)
+- Each route has dedicated handler
+- Convergent paths to audit/compliance
+- Escalation workflows per tier
+
+**See:** `02-content-moderation/manifest.yaml`
+
+### Route Key Best Practices
+
+1. **Use Single Words:** Router should return single word (e.g., "safe", "low")
+2. **Case Insensitive:** Matching is case-insensitive
+3. **Substring Match:** `route_key in response` (not exact match)
+4. **Order Matters:** First match wins, order edges by priority
+
+**Example:**
+```yaml
+edges:
+  # Order by priority (most specific first)
+  - from_node: router
+    to_node: critical_handler
+    condition:
+      route: "critical"  # Most specific
+  
+  - from_node: router
+    to_node: high_handler
+    condition:
+      route: "high"
+  
+  - from_node: router
+    to_node: default_handler
+    condition:
+      route: "safe"  # Fallback
+```
+
+---
+
+## Reusable Helpers
+
+### Existing Helpers
+
+**1. Observability Helper** (`universal_agent_tools/observability_helper.py`)
+- `setup_observability()` - One-line OpenTelemetry setup
+- `trace_runtime_execution()` - Context manager for tracing
+
+**2. Router Patterns** (`tools/universal_agent_tools/router_patterns.py`)
+- `RouteDefinition` - Route configuration dataclass
+- `build_decision_agent_manifest()` - Single-decision router builder
+
+**3. Ollama Tools** (`universal_agent_tools/ollama_tools.py`)
+- `create_llm_with_tools()` - Ollama LLM with tool binding
+- `MCPToolLoader` - Load tools from MCP servers
+- `parse_tool_calls_from_content()` - Manual tool call parsing
+
+**4. Model Config** (`universal_agent_tools/model_config.py`)
+- `ModelConfig.resolve_model()` - Standardized model resolution
+- Environment variable support (`UAA_MODEL`)
+- Model name mapping (backwards compatibility)
+
+### Patterns to Extract (Future)
+
+**1. Convergent Audit Pattern**
+```python
+def add_audit_convergence(graph: GraphIR, audit_node_id: str) -> GraphIR:
+    """Add edges from all terminal nodes to audit node."""
+    # Implementation
+```
+
+**2. Escalation Workflow Builder**
+```python
+def create_escalation_node(
+    node_id: str,
+    queue: str,
+    priority: str = "normal",
+    sla_hours: int = 24
+) -> NodeIR:
+    """Create escalation task node with SLA tracking."""
+    # Implementation
+```
+
+**3. Multi-Tier Router Builder**
+```python
+def build_multi_tier_router(
+    tiers: List[RiskTier],
+    router_config: RouterConfig
+) -> ManifestIR:
+    """Build content moderation-style multi-tier router."""
+    # Implementation
+```
+
+---
+
+## Common Gotchas
+
+### 1. Router Reference Parsing
+
+**Issue:** `router_ref` not being parsed correctly.
+
+**Solution:** Use nested format or ensure v2.0.5+:
+```yaml
+# Preferred (works in all versions)
+router:
+  name: "my_router"
+
+# Also works (v2.0.5+)
+router_ref: "my_router"
+```
+
+### 2. MessagesState Input Format
+
+**Issue:** Runtime expects `MessagesState` but code provides custom dict.
+
+**Solution:** Always use messages format:
+```python
+from langchain_core.messages import HumanMessage
+input_data = {"messages": [HumanMessage(content="...")]}
+```
+
+### 3. Route Key Matching
+
+**Issue:** Route not matching because LLM returns full sentence.
+
+**Solution:** Router system message should request single word:
+```yaml
+system_message: |
+  Respond with ONE word only: safe, low, medium, high, or critical.
+  No explanations, no JSON, just the word.
+```
+
+### 4. Compiler Pipeline
+
+**Issue:** Bypassing compiler pipeline leads to missing optimizations.
+
+**Solution:** Always use full pipeline:
+```python
+ir = parse("manifest.yaml")
+manager = create_default_pass_manager(OptimizationLevel.DEFAULT)
+ir_optimized = manager.run(ir)
+await runtime.initialize(ir_optimized, graph_name="main")
+```
+
+---
+
+**Last Updated:** December 7, 2025 - v3.0.1 patterns and content moderation learnings
 
