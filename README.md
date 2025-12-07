@@ -6,7 +6,7 @@
 
 **Learn by doing: content moderation, data pipelines, chatbots, research assistants, interactive playground, and migration guides.**
 
-[![Examples](https://img.shields.io/badge/examples-12-blue.svg)](.)
+[![Examples](https://img.shields.io/badge/examples-13-blue.svg)](.)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 </div>
@@ -244,8 +244,7 @@ nexus compile manifest.yaml --target langgraph --output agent.py
 
 ---
 
-<<<<<<< HEAD
-=======
+
 ### **12. Self-Modifying Agent (Runtime Tool Generation)** ([12-self-modifying-agent/](12-self-modifying-agent/)) 🔁
 **Evolve manifests from failure logs with reusable helpers**
 
@@ -268,7 +267,6 @@ python self_modifying_runtime.py
 
 ---
 
->>>>>>> codex/add-examples-to-universal_agent_examples-l1782c
 ## 🔄 **Migration Guides**
 
 ### **Migrating from LangGraph** ([migration-guides/langgraph-to-uaa.md](migration-guides/langgraph-to-uaa.md))
