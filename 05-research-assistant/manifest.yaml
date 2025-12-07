@@ -1,6 +1,6 @@
 name: research-assistant
-version: "1.0.0"
-description: "Document analysis and multi-document synthesis assistant"
+version: "2.0.0"
+description: "Document analysis and multi-document synthesis assistant with LLM-powered extraction"
 
 graphs:
   - name: analyze_document
@@ -20,62 +20,24 @@ graphs:
           strategy: "semantic"
       
       - id: extract_key_points
-        kind: task
+        kind: router
         label: "Extract Key Points"
-        config:
-          model: "local://qwen3"
-          prompt: |
-            Analyze this document section and extract key points:
-            {chunk}
-            
-            For each key point, provide:
-            - Claim: The main assertion
-            - Evidence: Supporting details
-            - Confidence: high/medium/low
-            - Page/Section: Location in document
+        router_ref: key_points_router
       
       - id: extract_entities
-        kind: task
+        kind: router
         label: "Entity Extraction"
-        config:
-          model: "local://qwen3"
-          prompt: |
-            Extract named entities from this text:
-            {chunk}
-            
-            Categories: people, organizations, locations, 
-            technologies, dates, citations
+        router_ref: entity_router
       
       - id: identify_themes
-        kind: task
+        kind: router
         label: "Theme Analysis"
-        config:
-          model: "local://qwen3"
-          prompt: |
-            Identify the main themes in this document:
-            {full_text}
-            
-            For each theme:
-            - Name and description
-            - Supporting evidence
-            - Relevance score (1-10)
+        router_ref: theme_router
       
       - id: generate_summary
-        kind: task
+        kind: router
         label: "Generate Summary"
-        config:
-          model: "local://qwen3"
-          prompt: |
-            Generate a comprehensive summary based on:
-            - Key Points: {key_points}
-            - Entities: {entities}
-            - Themes: {themes}
-            
-            Structure:
-            1. Executive Summary (2-3 sentences)
-            2. Main Arguments
-            3. Key Findings
-            4. Implications
+        router_ref: summary_router
     
     edges:
       - from_node: parse_document
@@ -119,37 +81,14 @@ graphs:
           source: "analyze_document.results"
       
       - id: compare_findings
-        kind: task
+        kind: router
         label: "Compare Findings"
-        config:
-          model: "local://qwen3"
-          prompt: |
-            Compare findings across these documents:
-            {summaries}
-            
-            Identify:
-            1. Common themes and agreements
-            2. Contrasting views and disagreements
-            3. Unique contributions from each document
-            4. Gaps in the collective knowledge
+        router_ref: comparison_router
       
       - id: synthesize
-        kind: task
+        kind: router
         label: "Generate Synthesis"
-        config:
-          model: "local://qwen3"
-          prompt: |
-            Create a comprehensive synthesis of these documents:
-            
-            Comparisons: {comparisons}
-            
-            Structure:
-            1. Overview
-            2. Key Themes (with citations)
-            3. Areas of Agreement
-            4. Areas of Debate
-            5. Recommendations
-            6. Bibliography
+        router_ref: synthesis_router
     
     edges:
       - from_node: collect_summaries
@@ -192,6 +131,92 @@ tools:
         pages:
           type: integer
 
-routers: []
+routers:
+  - name: key_points_router
+    strategy: llm
+    system_message: |
+      You are a research analysis assistant. Extract key points from document sections.
+      
+      For each key point, provide:
+      - Claim: The main assertion
+      - Evidence: Supporting details
+      - Confidence: high/medium/low
+      - Page/Section: Location in document
+      
+      Format as structured JSON array of key points.
+    default_model: "ollama://qwen3:8b"
+  
+  - name: entity_router
+    strategy: llm
+    system_message: |
+      You are an entity extraction assistant. Extract named entities from text.
+      
+      Categories: people, organizations, locations, technologies, dates, citations
+      
+      Return JSON array with entities grouped by category.
+    default_model: "ollama://qwen3:8b"
+  
+  - name: theme_router
+    strategy: llm
+    system_message: |
+      You are a theme analysis assistant. Identify main themes in documents.
+      
+      For each theme, provide:
+      - Name and description
+      - Supporting evidence
+      - Relevance score (1-10)
+      
+      Return JSON array of themes.
+    default_model: "ollama://qwen3:8b"
+  
+  - name: summary_router
+    strategy: llm
+    system_message: |
+      You are a research summarization assistant. Generate a comprehensive summary based on the analysis results.
+      
+      Review the conversation history to find:
+      - Key points extracted from the document
+      - Entities mentioned
+      - Themes identified
+      
+      Structure your summary:
+      1. Executive Summary (2-3 sentences)
+      2. Main Arguments
+      3. Key Findings
+      4. Implications
+      
+      Create a well-formatted, coherent summary that synthesizes all the analysis results.
+    default_model: "ollama://qwen3:8b"
+  
+  - name: comparison_router
+    strategy: llm
+    system_message: |
+      You are a research comparison assistant. Compare findings across multiple documents.
+      
+      Identify:
+      1. Common themes and agreements
+      2. Contrasting views and disagreements
+      3. Unique contributions from each document
+      4. Gaps in the collective knowledge
+      
+      Format as structured analysis with clear sections.
+    default_model: "ollama://qwen3:8b"
+  
+  - name: synthesis_router
+    strategy: llm
+    system_message: |
+      You are a research synthesis assistant. Create comprehensive synthesis documents.
+      
+      Structure:
+      1. Overview
+      2. Key Themes (with citations)
+      3. Areas of Agreement
+      4. Areas of Debate
+      5. Recommendations
+      6. Bibliography
+      
+      Create a well-formatted, academic-quality synthesis.
+    default_model: "ollama://qwen3:8b"
+
 policies: []
 

@@ -1194,5 +1194,129 @@ edges:
 
 ---
 
-**Last Updated:** December 7, 2025 - v3.0.1 patterns: content moderation, ETL pipeline, and support chatbot learnings
+## Research Assistant Patterns (Example 05)
+
+### Parallel Processing with Convergence
+
+**Use Case:** Run multiple analysis tasks in parallel, then converge to synthesis.
+
+**Pattern:**
+```yaml
+edges:
+  - from_node: chunk_content
+    to_node: extract_key_points
+  
+  - from_node: chunk_content
+    to_node: extract_entities  # Parallel with extract_key_points
+  
+  - from_node: extract_key_points
+    to_node: identify_themes
+  
+  - from_node: identify_themes
+    to_node: generate_summary
+  
+  - from_node: extract_entities
+    to_node: generate_summary  # Converges to summary
+```
+
+**Key Points:**
+- Multiple edges from same source = parallel execution
+- Convergent paths ensure all results are used
+- Final node receives context from all parallel branches
+
+### Specialized Router Pattern
+
+**Use Case:** Each analysis task uses a specialized router with task-specific system message.
+
+**Pattern:**
+```yaml
+nodes:
+  - id: extract_key_points
+    kind: router
+    router_ref: key_points_router
+  
+  - id: extract_entities
+    kind: router
+    router_ref: entity_router
+  
+  - id: identify_themes
+    kind: router
+    router_ref: theme_router
+
+routers:
+  - name: key_points_router
+    system_message: "Extract key points with claims, evidence, confidence..."
+  
+  - name: entity_router
+    system_message: "Extract entities: people, organizations, locations..."
+  
+  - name: theme_router
+    system_message: "Identify themes with names, evidence, relevance scores..."
+```
+
+**Benefits:**
+- Each router optimized for its specific task
+- Clear separation of concerns
+- Easy to tune individual routers
+- Reusable router definitions
+
+### Multi-Graph Pattern
+
+**Use Case:** Separate graphs for different workflows (single doc analysis vs multi-doc synthesis).
+
+**Pattern:**
+```yaml
+graphs:
+  - name: analyze_document
+    entry_node: parse_document
+    # ... single document analysis
+  
+  - name: synthesize_documents
+    entry_node: collect_summaries
+    # ... multi-document synthesis
+```
+
+**Usage:**
+```python
+# Analyze single document
+await runtime.initialize(ir_optimized, graph_name="analyze_document")
+
+# Synthesize multiple documents
+await runtime.initialize(ir_optimized, graph_name="synthesize_documents")
+```
+
+**Benefits:**
+- Clear workflow separation
+- Can reuse nodes across graphs
+- Easy to extend with new workflows
+
+### Structured Output Pattern
+
+**Use Case:** Routers generate structured JSON or formatted text for downstream processing.
+
+**Pattern:**
+```yaml
+routers:
+  - name: key_points_router
+    system_message: |
+      Extract key points and return as JSON array:
+      [
+        {
+          "claim": "...",
+          "evidence": "...",
+          "confidence": "high",
+          "page": 1
+        }
+      ]
+```
+
+**Key Points:**
+- System message explicitly requests JSON format
+- Structured output enables downstream processing
+- Can parse JSON from router responses
+- Use JSON parsing helper for reliability
+
+---
+
+**Last Updated:** December 7, 2025 - v3.0.1 patterns: content moderation, ETL pipeline, support chatbot, and research assistant learnings
 
