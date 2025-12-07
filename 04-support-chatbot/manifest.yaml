@@ -11,7 +11,7 @@ graphs:
         label: "Intent Classifier"
         router_ref: intent_classifier
         config:
-          model: "gpt-4o-mini"
+          model: "local://qwen3"
           prompt: |
             Classify the user's intent from their message:
             {user_message}
@@ -27,7 +27,7 @@ graphs:
         kind: task
         label: "Technical Troubleshooting"
         config:
-          model: "gpt-4o"
+          model: "local://qwen3"
           prompt: |
             Help troubleshoot this technical issue:
             {user_message}
@@ -45,7 +45,7 @@ graphs:
         kind: task
         label: "Billing Handler"
         config:
-          model: "gpt-4o-mini"
+          model: "local://qwen3"
           prompt: |
             Handle this billing inquiry:
             {user_message}
@@ -56,7 +56,7 @@ graphs:
         kind: task
         label: "Sentiment Analysis"
         config:
-          model: "gpt-4o-mini"
+          model: "local://qwen3"
           prompt: |
             Analyze sentiment and urgency of this complaint:
             {user_message}
@@ -75,7 +75,7 @@ graphs:
         kind: task
         label: "Generate Response"
         config:
-          model: "gpt-4o-mini"
+          model: "local://qwen3"
           prompt: |
             Generate a helpful, empathetic response based on:
             - User message: {user_message}
@@ -152,8 +152,8 @@ routers:
     strategy: llm
     system_message: "You are an intent classifier for customer support. Classify user messages into: faq, technical, billing, complaint, or other."
     model_candidates:
-      - "gpt-4o-mini"
-    default_model: "gpt-4o-mini"
+      - "local://qwen3"
+    default_model: "local://qwen3"
 
 tools:
   - name: knowledge_search

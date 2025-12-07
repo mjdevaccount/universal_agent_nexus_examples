@@ -15,7 +15,7 @@ graphs:
         kind: router
         label: "Research Intent Classifier"
         config:
-          llm: "local://qwen2.5-32b"
+          llm: "local://qwen3"
           system_message: |
             You are a research director. Analyze the user's research query.
             Respond with ONE of:

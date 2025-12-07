@@ -20,7 +20,7 @@ graphs:
         kind: task
         label: "LLM Enrichment"
         config:
-          model: "gpt-4o-mini"
+          model: "local://qwen3"
           prompt: |
             Analyze this record and extract:
             - Sentiment: positive, negative, or neutral

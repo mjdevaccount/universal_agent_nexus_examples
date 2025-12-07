@@ -63,7 +63,7 @@ def build_manifest():
     manifest = build_decision_agent_manifest(
         agent_name="customer-support",
         system_message=SYSTEM_MESSAGE,
-        llm="local://qwen2.5-32b",
+        llm="local://qwen3",
         routes=routes,
         formatter_prompt="Reply to customer issue: {result}",
         tools=tools,

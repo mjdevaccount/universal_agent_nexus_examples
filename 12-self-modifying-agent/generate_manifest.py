@@ -47,7 +47,7 @@ def write_manifest() -> None:
     manifest = build_decision_agent_manifest(
         agent_name="self-modifying-agent",
         system_message="Decide whether to search documents or calculate risk.",
-        llm="local://qwen2.5-32b",
+        llm="local://qwen3",
         routes=routes,
         formatter_prompt="Format the result for the user: {result}",
         tools=tools,

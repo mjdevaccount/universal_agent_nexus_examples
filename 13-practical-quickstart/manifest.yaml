@@ -23,7 +23,7 @@ graphs:
         Respond with ONE word only.
 
         '
-      llm: local://qwen2.5-32b
+      llm: local://qwen3
     source_location: null
     metadata:
       data: {}
