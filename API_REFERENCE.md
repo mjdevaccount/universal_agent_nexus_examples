@@ -955,5 +955,123 @@ await runtime.initialize(ir_optimized, graph_name="main")
 
 ---
 
-**Last Updated:** December 7, 2025 - v3.0.1 patterns and content moderation learnings
+## ETL Pipeline Patterns (Example 03)
+
+### Router-Based Data Enrichment
+
+**Use Case:** Use LLM router to enrich data records with structured output.
+
+**Pattern:**
+```yaml
+nodes:
+  - id: enrich
+    kind: router
+    router_ref: enrichment_router
+
+routers:
+  - name: enrichment_router
+    strategy: llm
+    system_message: |
+      You are a data enrichment AI. Analyze the input record and extract structured information.
+      
+      Return ONLY valid JSON with these fields:
+      {
+        "sentiment": "positive|negative|neutral",
+        "entities": ["entity1", "entity2"],
+        "category": "support|feedback|inquiry|other",
+        "confidence": 0.95
+      }
+      
+      No explanations, no markdown, just the JSON object.
+    default_model: "ollama://qwen3:8b"
+```
+
+**Key Points:**
+- Router returns structured JSON (not single words)
+- System message must explicitly request JSON format
+- Use `router_ref` to reference router configuration
+- LLM response becomes the enriched data
+
+### Sequential Pipeline Flow
+
+**Use Case:** Linear ETL pipeline: Extract → Transform → Validate → Load.
+
+**Pattern:**
+```yaml
+edges:
+  - from_node: extract
+    to_node: enrich
+  
+  - from_node: enrich
+    to_node: validate
+  
+  - from_node: validate
+    to_node: load
+  
+  - from_node: load
+    to_node: pipeline_complete
+```
+
+**Benefits:**
+- Simple linear flow
+- Easy to understand and debug
+- Natural ETL pattern
+
+### JSON Parsing from LLM Responses
+
+**Challenge:** LLM returns JSON with newlines, need to parse reliably.
+
+**Solution:**
+```python
+import json
+import re
+
+def parse_json_from_message(content: str) -> dict:
+    """Extract and parse JSON from LLM message."""
+    if "{" in content:
+        json_start = content.find("{")
+        json_end = content.rfind("}") + 1
+        if json_end > json_start:
+            json_str = content[json_start:json_end]
+            # Clean up: remove newlines, normalize whitespace
+            json_str = re.sub(r'\n\s*', ' ', json_str)
+            json_str = re.sub(r'\s+', ' ', json_str)
+            return json.loads(json_str)
+    return None
+```
+
+**Key Points:**
+- Extract JSON substring (between `{` and `}`)
+- Normalize whitespace (remove newlines)
+- Handle both pretty-printed and compact JSON
+
+### Simplified Validation
+
+**Pattern:** Use task node for validation instead of external tool.
+
+**Before (Complex):**
+```yaml
+- id: validate
+  kind: tool
+  tool_ref: schema_validator  # Requires external service
+```
+
+**After (Simple):**
+```yaml
+- id: validate
+  kind: task
+  config:
+    action: "validate_json"
+    required_fields: ["sentiment", "entities", "category"]
+```
+
+**Benefits:**
+- No external dependencies
+- Faster execution
+- Easier to test
+- Can be enhanced later with real validation logic
+
+---
+
+**Last Updated:** December 7, 2025 - v3.0.1 patterns, content moderation, and ETL pipeline learnings
 

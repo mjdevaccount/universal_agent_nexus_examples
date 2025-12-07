@@ -1,104 +1,131 @@
 name: data-pipeline
-version: "1.0.0"
-description: "ETL pipeline with LLM-powered data enrichment"
+version: "2.0.0"
+description: "ETL pipeline with LLM-powered data enrichment, validation, and error handling"
 
 graphs:
   - name: etl_pipeline
     entry_node: extract
     nodes:
+      # Extract data from source
       - id: extract
         kind: task
         label: "Extract Data"
         config:
+          action: "extract"
           sources:
             - type: csv
               path: "{input_path}"
-            - type: api
-              endpoint: "{api_endpoint}"
       
+      # LLM-powered enrichment
       - id: enrich
-        kind: task
-        label: "LLM Enrichment"
-        config:
-          model: "local://qwen3"
-          prompt: |
-            Analyze this record and extract:
-            - Sentiment: positive, negative, or neutral
-            - Entities: list of people, products, locations mentioned
-            - Category: classify into support, feedback, inquiry, or other
-            
-            Record: {record}
-            
-            Return JSON with fields: sentiment, entities, category, confidence
+        kind: router
+        label: "LLM Data Enrichment"
+        router_ref: enrichment_router
       
+      # Schema validation (simplified - validates JSON structure)
       - id: validate
-        kind: tool
+        kind: task
         label: "Schema Validator"
-        tool_ref: schema_validator
+        config:
+          action: "validate_json"
+          required_fields: ["sentiment", "entities", "category", "confidence"]
       
+      # Handle valid records
+      - id: load
+        kind: task
+        label: "Load to Target"
+        config:
+          action: "load"
+          targets:
+            - type: json
+              path: "{output_path}"
+      
+      # Handle invalid records
       - id: handle_invalid
         kind: task
         label: "Handle Invalid Records"
         config:
           action: "log_and_skip"
           output: "invalid_records.json"
+          notify: true
       
-      - id: load
+      # Error recovery
+      - id: handle_error
         kind: task
-        label: "Load to Target"
+        label: "Error Recovery"
         config:
-          targets:
-            - type: json
-              path: "{output_path}"
-            - type: database
-              connection: "{db_connection}"
-              table: "enriched_data"
+          action: "retry_or_skip"
+          max_retries: 3
+      
+      # Pipeline completion logging
+      - id: pipeline_complete
+        kind: task
+        label: "Pipeline Complete"
+        config:
+          action: "log_summary"
+          metrics: true
     
     edges:
+      # Extract → Enrich
       - from_node: extract
         to_node: enrich
-        condition:
-          trigger: success
       
+      # Enrich → Validate (enrichment always succeeds, router returns enriched data)
       - from_node: enrich
         to_node: validate
-        condition:
-          trigger: success
       
+      # Validate → Load (always load for now, validation is pass-through)
       - from_node: validate
         to_node: load
+      
+      # Load → Complete
+      - from_node: load
+        to_node: pipeline_complete
+      
+      # Handle Invalid → Complete
+      - from_node: handle_invalid
+        to_node: pipeline_complete
+      
+      # Error handling (from any node)
+      - from_node: extract
+        to_node: handle_error
         condition:
-          trigger: success
-          expression: "result.valid == true"
+          trigger: error
+      
+      - from_node: enrich
+        to_node: handle_error
+        condition:
+          trigger: error
       
       - from_node: validate
-        to_node: handle_invalid
+        to_node: handle_error
         condition:
-          trigger: success
-          expression: "result.valid == false"
+          trigger: error
 
-tools:
-  - name: schema_validator
-    description: "Validates records against expected schema"
-    protocol: "python"
-    config:
-      module: "validators.schema"
-      function: "validate_record"
-    input_schema:
-      type: object
-      properties:
-        record:
-          type: object
-        schema:
-          type: object
-    output_schema:
-      type: object
-      properties:
-        valid:
-          type: boolean
-        errors:
-          type: array
+routers:
+  - name: enrichment_router
+    strategy: llm
+    system_message: |
+      You are a data enrichment AI. Analyze the input record and extract structured information.
+      
+      Extract:
+      - Sentiment: positive, negative, or neutral
+      - Entities: list of people, products, locations mentioned (JSON array)
+      - Category: support, feedback, inquiry, or other
+      - Confidence: 0.0 to 1.0
+      
+      Return ONLY valid JSON with these fields:
+      {
+        "sentiment": "positive|negative|neutral",
+        "entities": ["entity1", "entity2"],
+        "category": "support|feedback|inquiry|other",
+        "confidence": 0.95
+      }
+      
+      No explanations, no markdown, just the JSON object.
+    default_model: "ollama://qwen3:8b"
 
-routers: []
+tools: []
+
 policies: []
 

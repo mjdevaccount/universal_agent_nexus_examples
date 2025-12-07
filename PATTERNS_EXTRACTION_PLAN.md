@@ -363,5 +363,77 @@ result = await runtime.execute(
 
 ---
 
-**Last Updated:** December 7, 2025 - Content moderation exercise analysis
+### 6. JSON Parsing Helper
+
+**Use Case:** Parse JSON from LLM router responses (common in ETL pipelines).
+
+**Current Implementation:** Manual parsing in each example.
+
+**Proposed Helper:**
+```python
+# universal_agent_tools/llm_helpers.py
+
+def parse_json_from_message(content: str) -> Optional[Dict]:
+    """
+    Extract and parse JSON from LLM message content.
+    
+    Handles:
+    - Pretty-printed JSON with newlines
+    - JSON embedded in text
+    - Whitespace normalization
+    
+    Args:
+        content: Message content string
+    
+    Returns:
+        Parsed dict or None if no valid JSON found
+    """
+    # Implementation
+```
+
+**Usage:**
+```python
+from universal_agent_tools.llm_helpers import parse_json_from_message
+
+for msg in messages:
+    if hasattr(msg, 'content'):
+        enriched_data = parse_json_from_message(msg.content)
+        if enriched_data:
+            break
+```
+
+**Benefits:**
+- Consistent JSON parsing
+- Handles edge cases (newlines, whitespace)
+- Reusable across examples
+
+---
+
+## New Patterns from Example 03
+
+### Router-Based Data Enrichment
+
+**Pattern:** Use router node to generate structured JSON output for data enrichment.
+
+**Key Learnings:**
+- Router system message must explicitly request JSON format
+- Use `router_ref` to reference router configuration
+- LLM response becomes the enriched data (not just routing decision)
+- JSON parsing helper needed for reliable extraction
+
+**See:** `03-data-pipeline/manifest.yaml` for full example
+
+### Sequential Pipeline Flow
+
+**Pattern:** Linear ETL flow without complex routing.
+
+**Key Learnings:**
+- Simple edges (no conditions needed for linear flow)
+- Each stage transforms data
+- Final stage logs completion
+- Easy to extend with additional stages
+
+---
+
+**Last Updated:** December 7, 2025 - Content moderation and ETL pipeline exercise analysis
 
