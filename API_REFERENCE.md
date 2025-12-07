@@ -1318,5 +1318,154 @@ routers:
 
 ---
 
-**Last Updated:** December 7, 2025 - v3.0.1 patterns: content moderation, ETL pipeline, support chatbot, and research assistant learnings
+## N-Decision Router Pattern (Example 11)
+
+### N-Way Routing Pattern
+
+**Use Case:** Single router that classifies input into N categories, each leading to a different tool/action.
+
+**Pattern:**
+```yaml
+nodes:
+  - id: analyze_query
+    kind: router
+    router_ref: decision_router
+  
+  - id: data_quality_exec
+    kind: tool
+    tool_ref: data_quality_tool
+  
+  - id: growth_experiment_exec
+    kind: tool
+    tool_ref: growth_experiment_tool
+  
+  # ... more tool nodes ...
+
+edges:
+  - from_node: analyze_query
+    to_node: data_quality_exec
+    condition:
+      route: "data_quality"
+  
+  - from_node: analyze_query
+    to_node: growth_experiment_exec
+    condition:
+      route: "growth_experiment"
+  
+  # ... more routes ...
+
+routers:
+  - name: decision_router
+    system_message: |
+      Classify the user's request into one of:
+      - data_quality
+      - growth_experiment
+      - customer_support
+      - reporting
+      
+      Respond with ONLY the category name.
+```
+
+**Key Points:**
+- Single router makes one decision per invocation
+- N edges from router (one per category)
+- Each edge uses `route:` condition with category name
+- Router returns single word for simple matching
+- All paths can converge to a common formatter
+
+### Convergent Formatter Pattern
+
+**Use Case:** Multiple execution paths converge to a single formatter/router for consistent output.
+
+**Pattern:**
+```yaml
+edges:
+  - from_node: data_quality_exec
+    to_node: format_response
+  
+  - from_node: growth_experiment_exec
+    to_node: format_response
+  
+  - from_node: customer_support_exec
+    to_node: format_response
+  
+  - from_node: reporting_exec
+    to_node: format_response
+
+nodes:
+  - id: format_response
+    kind: router
+    router_ref: formatter_router
+
+routers:
+  - name: formatter_router
+    system_message: |
+      Summarize the tool output clearly for the user.
+      Make it concise, actionable, and easy to understand.
+```
+
+**Benefits:**
+- Consistent output format across all routes
+- Single place to modify formatting logic
+- Easy to add new routes without changing formatter
+- Can include route-specific context in formatting
+
+### Router for Formatting
+
+**Use Case:** Use a router (not just a task) for LLM-powered formatting/transformation.
+
+**Pattern:**
+```yaml
+nodes:
+  - id: format_response
+    kind: router  # Router, not task!
+    router_ref: formatter_router
+
+routers:
+  - name: formatter_router
+    strategy: llm
+    system_message: |
+      Transform the tool output into a user-friendly format.
+      - Extract key information
+      - Structure it clearly
+      - Make it actionable
+```
+
+**Why Router Instead of Task?**
+- Router uses LLM for intelligent formatting
+- Can adapt format based on content
+- Better than simple string templates
+- Consistent with v3.0.0 patterns
+
+### Extending N-Decision Router
+
+**Adding New Routes:**
+1. Add new tool node
+2. Add new edge from router with `route:` condition
+3. Add edge from tool to formatter
+4. Update router system message to include new category
+
+**Example:**
+```yaml
+# Add new tool
+- id: analytics_exec
+  kind: tool
+  tool_ref: analytics_tool
+
+# Add new route
+- from_node: analyze_query
+  to_node: analytics_exec
+  condition:
+    route: "analytics"
+
+# Converge to formatter
+- from_node: analytics_exec
+  to_node: format_response
+```
+
+**No code changes needed** - just manifest updates!
+
+---
+
+**Last Updated:** December 7, 2025 - v3.0.1 patterns: content moderation, ETL pipeline, support chatbot, research assistant, and N-decision router learnings
 
