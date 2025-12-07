@@ -110,8 +110,10 @@ async def main():
                 for line in response_lines:
                     if line.strip():
                         print(f"   {line}")
-                if len(cleaned.split('\n')) > 10:
-                    print(f"   ... ({len(cleaned.split('\n')) - 10} more lines)")
+                total_lines = len(cleaned.split('\n'))
+                if total_lines > 10:
+                    remaining = total_lines - 10
+                    print(f"   ... ({remaining} more lines)")
             else:
                 # Fallback: show last message
                 if messages:
