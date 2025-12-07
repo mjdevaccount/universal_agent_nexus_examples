@@ -24,4 +24,14 @@ __all__ = [
     "SelfModifyingAgent",
     "ToolGenerationVisitor",
     "deterministic_tool_from_error",
+    "DictToolServer",
+    "ToolHandler",
 ]
+
+
+def __getattr__(name):
+    if name in {"DictToolServer", "ToolHandler"}:
+        from .mcp_stub import DictToolServer, ToolHandler
+
+        return {"DictToolServer": DictToolServer, "ToolHandler": ToolHandler}[name]
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

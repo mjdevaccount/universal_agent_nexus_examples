@@ -9,6 +9,7 @@ Reusable, promotion-ready building blocks extracted from the Local LLM + Tool Se
 - `dynamic_tools.py` — IR visitor helpers for runtime tool creation (e.g., `DynamicCSVToolInjector`).
 - `router_patterns.py` — single- and multi-decision router manifest builder (`RouteDefinition`, `build_decision_agent_manifest`).
 - `self_modifying.py` — self-evolving agent utilities (`SelfModifyingAgent`, `deterministic_tool_from_error`).
+- `mcp_stub.py` — tiny MCP stub server helper (`DictToolServer`) for fast local demos.
 
 ## Usage Examples
 
@@ -71,6 +72,21 @@ manifest = build_decision_agent_manifest(
     routes=routes,
     tools=tools,
 )
+```
+
+### Spin up a stub MCP server without boilerplate
+```python
+from tools.universal_agent_tools import DictToolServer
+
+server = DictToolServer(
+    name="billing-mcp",
+    tools={
+        "get_balance": lambda args: {"balance": 42, "status": "active"},
+        "process_payment": lambda args: f"Processed ${args.get('amount', 0)}",
+    },
+)
+
+server.run_sync()
 ```
 
 ### Evolve an agent from failure logs

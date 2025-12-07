@@ -1,0 +1,177 @@
+name: customer-support
+version: 1.0.0
+description: Minimal single-decision support router backed by MCP stubs.
+graphs:
+- name: main
+  entry_node: analyze_query
+  nodes:
+  - id: analyze_query
+    kind: router
+    label: Decision Router
+    description: null
+    config:
+      system_message: '
+
+        Classify customer issue as:
+
+        - "billing" (payment/subscription)
+
+        - "technical" (product problems)
+
+        - "account" (login/access)
+
+        Respond with ONE word only.
+
+        '
+      llm: local://qwen2.5-32b
+    source_location: null
+    metadata:
+      data: {}
+      _annotations: {}
+    router_ref: null
+    tool_ref: null
+  - id: billing_exec
+    kind: tool
+    label: Query Billing System
+    description: null
+    config: {}
+    source_location: null
+    metadata:
+      data: {}
+      _annotations: {}
+    router_ref: null
+    tool_ref: billing_system
+  - id: technical_exec
+    kind: tool
+    label: Get Technical Help
+    description: null
+    config: {}
+    source_location: null
+    metadata:
+      data: {}
+      _annotations: {}
+    router_ref: null
+    tool_ref: tech_support
+  - id: account_exec
+    kind: tool
+    label: Account Operations
+    description: null
+    config: {}
+    source_location: null
+    metadata:
+      data: {}
+      _annotations: {}
+    router_ref: null
+    tool_ref: account_service
+  - id: format_response
+    kind: task
+    label: Format Response
+    description: null
+    config:
+      prompt: 'Reply to customer issue: {result}'
+    source_location: null
+    metadata:
+      data: {}
+      _annotations: {}
+    router_ref: null
+    tool_ref: null
+  edges:
+  - from_node: analyze_query
+    to_node: billing_exec
+    condition:
+      expression: contains(output, 'billing')
+    metadata:
+      data: {}
+      _annotations: {}
+  - from_node: billing_exec
+    to_node: format_response
+    condition:
+      trigger: success
+      expression: null
+      route: null
+    metadata:
+      data: {}
+      _annotations: {}
+  - from_node: analyze_query
+    to_node: technical_exec
+    condition:
+      expression: contains(output, 'technical')
+    metadata:
+      data: {}
+      _annotations: {}
+  - from_node: technical_exec
+    to_node: format_response
+    condition:
+      trigger: success
+      expression: null
+      route: null
+    metadata:
+      data: {}
+      _annotations: {}
+  - from_node: analyze_query
+    to_node: account_exec
+    condition:
+      expression: contains(output, 'account')
+    metadata:
+      data: {}
+      _annotations: {}
+  - from_node: account_exec
+    to_node: format_response
+    condition:
+      trigger: success
+      expression: null
+      route: null
+    metadata:
+      data: {}
+      _annotations: {}
+  metadata:
+    data: {}
+    _annotations: {}
+tools:
+- name: billing_system
+  description: Billing database operations
+  protocol: mcp
+  config:
+    command: python
+    args:
+    - servers.py
+    - --server
+    - billing
+  input_schema: null
+  output_schema: null
+  metadata:
+    data: {}
+    _annotations: {}
+- name: tech_support
+  description: Technical troubleshooting steps
+  protocol: mcp
+  config:
+    command: python
+    args:
+    - servers.py
+    - --server
+    - tech
+  input_schema: null
+  output_schema: null
+  metadata:
+    data: {}
+    _annotations: {}
+- name: account_service
+  description: Account management actions
+  protocol: mcp
+  config:
+    command: python
+    args:
+    - servers.py
+    - --server
+    - account
+  input_schema: null
+  output_schema: null
+  metadata:
+    data: {}
+    _annotations: {}
+routers: []
+policies: []
+metadata:
+  data: {}
+  _annotations: {}
