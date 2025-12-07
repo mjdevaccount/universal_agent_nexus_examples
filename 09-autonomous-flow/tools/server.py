@@ -36,7 +36,19 @@ from document_writer import (
     write_section,
     compile_document,
     get_plan_status,
+    set_preprocessing_data,
+    create_multi_pass_plan,
+    get_qwen_prompt_template,
     TOOLS as DOC_TOOLS
+)
+
+from codebase_analyzer import (
+    analyze_codebase_structure,
+    create_semantic_clusters,
+    build_dependency_graph,
+    calculate_pagerank_scores,
+    get_codebase_modules,
+    TOOLS as ANALYZER_TOOLS
 )
 
 app = FastAPI(title="AutonomousFlow MCP Server")
@@ -44,7 +56,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 
 
 # Combine all tools
-ALL_TOOLS = GITHUB_TOOLS + CHUNK_TOOLS + DOC_TOOLS
+ALL_TOOLS = GITHUB_TOOLS + CHUNK_TOOLS + DOC_TOOLS + ANALYZER_TOOLS
 
 
 class ToolRequest(BaseModel):
@@ -62,9 +74,19 @@ class ToolRequest(BaseModel):
     
     # Document writer tools
     title: Optional[str] = None
+    topic: Optional[str] = None
     sections: Optional[list] = None
     section_id: Optional[str] = None
     filename: Optional[str] = None
+    clusters: Optional[dict] = None
+    dependency_graph: Optional[dict] = None
+    pagerank_scores: Optional[dict] = None
+    pass_type: Optional[str] = None
+    context: Optional[dict] = None
+    
+    # Codebase analyzer tools
+    max_clusters: Optional[int] = 10
+    iterations: Optional[int] = 10
 
 
 @app.get("/mcp/tools")
@@ -189,7 +211,10 @@ async def api_get_file_chunks(request: ToolRequest):
 @app.post("/mcp/tools/analyze_full_stack")
 async def api_analyze_full_stack(request: ToolRequest = None):
     """Analyze entire Universal Agent stack."""
-    result = analyze_full_stack()
+    import asyncio
+    # Run in thread pool to avoid blocking
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(None, analyze_full_stack)
     return {"content": json.dumps(result, indent=2, default=str)}
 
 
@@ -226,6 +251,75 @@ async def api_compile_document(request: ToolRequest):
 async def api_get_plan_status(request: ToolRequest = None):
     """Check current document plan status."""
     result = get_plan_status()
+    return {"content": json.dumps(result, indent=2, default=str)}
+
+
+@app.post("/mcp/tools/set_preprocessing_data")
+async def api_set_preprocessing_data(request: ToolRequest):
+    """Store preprocessing data for multi-pass generation."""
+    result = set_preprocessing_data(
+        clusters=request.clusters,
+        dependency_graph=request.dependency_graph,
+        pagerank_scores=request.pagerank_scores
+    )
+    return {"content": json.dumps(result, indent=2, default=str)}
+
+
+@app.post("/mcp/tools/create_multi_pass_plan")
+async def api_create_multi_pass_plan(request: ToolRequest):
+    """Create a multi-pass document plan."""
+    if not request.title or not request.topic:
+        raise HTTPException(status_code=400, detail="title and topic are required")
+    result = create_multi_pass_plan(request.title, request.topic)
+    return {"content": json.dumps(result, indent=2, default=str)}
+
+
+@app.post("/mcp/tools/get_qwen_prompt_template")
+async def api_get_qwen_prompt_template(request: ToolRequest):
+    """Get Qwen-optimized prompt template."""
+    if not request.pass_type or not request.context:
+        raise HTTPException(status_code=400, detail="pass_type and context are required")
+    from document_writer import get_qwen_prompt_template
+    result = get_qwen_prompt_template(request.pass_type, request.context)
+    return {"content": json.dumps({"prompt": result}, indent=2, default=str)}
+
+
+# ===== Codebase Analyzer Tools =====
+
+@app.post("/mcp/tools/analyze_codebase_structure")
+async def api_analyze_codebase_structure(request: ToolRequest = None):
+    """PREPROCESSING STEP 1: Analyze codebase structure."""
+    result = analyze_codebase_structure(request.repo if request else None)
+    return {"content": json.dumps(result, indent=2, default=str)}
+
+
+@app.post("/mcp/tools/create_semantic_clusters")
+async def api_create_semantic_clusters(request: ToolRequest = None):
+    """PREPROCESSING STEP 2: Create semantic clusters."""
+    max_clusters = getattr(request, 'max_clusters', 10) if request else 10
+    result = create_semantic_clusters(max_clusters)
+    return {"content": json.dumps(result, indent=2, default=str)}
+
+
+@app.post("/mcp/tools/build_dependency_graph")
+async def api_build_dependency_graph(request: ToolRequest = None):
+    """PREPROCESSING STEP 3: Build dependency graph."""
+    result = build_dependency_graph()
+    return {"content": json.dumps(result, indent=2, default=str)}
+
+
+@app.post("/mcp/tools/calculate_pagerank_scores")
+async def api_calculate_pagerank_scores(request: ToolRequest = None):
+    """PREPROCESSING STEP 4: Calculate PageRank scores."""
+    iterations = getattr(request, 'iterations', 10) if request else 10
+    result = calculate_pagerank_scores(iterations)
+    return {"content": json.dumps(result, indent=2, default=str)}
+
+
+@app.post("/mcp/tools/get_codebase_modules")
+async def api_get_codebase_modules(request: ToolRequest = None):
+    """Get all modules with metadata."""
+    result = get_codebase_modules(request.repo if request else None)
     return {"content": json.dumps(result, indent=2, default=str)}
 
 

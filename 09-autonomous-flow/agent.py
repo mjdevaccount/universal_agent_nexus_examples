@@ -8,10 +8,30 @@ import io
 from pathlib import Path
 from datetime import datetime, timedelta
 import json
+import logging
+from contextlib import nullcontext
 
 # Fix Windows console encoding
 if sys.platform == 'win32':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+
+# Setup structured logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger("autonomous_flow")
+
+# Try to use observability if available
+try:
+    from universal_agent_nexus.observability import setup_tracing, trace_execution
+    setup_tracing(service_name="autonomous-flow", environment="development")
+    OBSERVABILITY_AVAILABLE = True
+    logger.info("Observability enabled: OpenTelemetry tracing available")
+except ImportError:
+    OBSERVABILITY_AVAILABLE = False
+    logger.warning("Observability module not available - using basic logging")
 
 # Add parent for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "08-local-agent-runtime" / "runtime"))
@@ -82,15 +102,15 @@ def create_agent(task_type: str = "sync"):
     
     task_type: "sync", "query", or "maintain"
     """
-    print(f"🔧 Creating {task_type} agent...")
+    logger.info(f"Creating {task_type} agent", extra={"task_type": task_type})
     
     # Load tools from our MCP server
     tools = MCPToolLoader.load_from_server(MCP_SERVER)
-    print(f"   ✅ Loaded {len(tools)} tools")
+    logger.info(f"Loaded {len(tools)} tools", extra={"tool_count": len(tools), "server": MCP_SERVER})
     
     # Create LLM
     llm, _ = create_llm_with_tools(tools, model="qwen2.5-coder:14b")
-    print(f"   ✅ LLM ready")
+    logger.info("LLM ready", extra={"model": "qwen2.5-coder:14b"})
     
     # Build graph
     def agent_node(state: AgentState):
@@ -100,12 +120,24 @@ def create_agent(task_type: str = "sync"):
         
         # Parse tool calls from content if needed
         if hasattr(response, "tool_calls") and response.tool_calls:
+            logger.info("Agent generated tool calls", extra={
+                "tool_count": len(response.tool_calls),
+                "tool_names": [tc.get("name") for tc in response.tool_calls]
+            })
             return {"messages": [response]}
         
         if hasattr(response, "content") and response.content:
             parsed = parse_tool_calls_from_content(response.content, tools)
             if parsed:
+                logger.info("Parsed tool calls from content", extra={
+                    "tool_count": len(parsed),
+                    "tool_names": [tc.get("name") for tc in parsed]
+                })
                 response = AIMessage(content=response.content, tool_calls=parsed)
+            else:
+                logger.info("Agent generated text response (no tool calls)", extra={
+                    "content_length": len(str(response.content))
+                })
         
         return {"messages": [response]}
     
@@ -120,15 +152,30 @@ def create_agent(task_type: str = "sync"):
                 tool_args = tc.get("args", {})
                 tool_id = tc.get("id", tool_name)
                 
+                logger.info("Executing tool", extra={
+                    "tool_name": tool_name,
+                    "tool_id": tool_id,
+                    "args_keys": list(tool_args.keys()) if tool_args else []
+                })
+                
                 tool = next((t for t in tools if t.name == tool_name), None)
                 if tool:
                     try:
                         result = tool._run(**tool_args)
+                        logger.info("Tool executed successfully", extra={
+                            "tool_name": tool_name,
+                            "result_length": len(str(result))
+                        })
                     except Exception as e:
+                        logger.error("Tool execution failed", extra={
+                            "tool_name": tool_name,
+                            "error": str(e)
+                        }, exc_info=True)
                         result = f"Error: {str(e)}"
                     
                     tool_messages.append(ToolMessage(content=str(result), tool_call_id=tool_id))
                 else:
+                    logger.warning("Tool not found", extra={"tool_name": tool_name})
                     tool_messages.append(ToolMessage(content=f"Tool {tool_name} not found", tool_call_id=tool_id))
         
         return {"messages": tool_messages}
@@ -292,32 +339,39 @@ def run_document_agent(topic: str, output_file: str = None):
         safe_topic = topic.lower().replace(" ", "_")[:30]
         output_file = f"{safe_topic}_{datetime.now().strftime('%Y%m%d')}"
     
-    # Strict Plan-Execute prompt
-    prompt = f"""You are a Technical Documentation Agent. Generate a structured document.
+    # Enhanced Multi-Pass prompt (simplified - use analyze_full_stack which works)
+    prompt = f"""You are a Technical Documentation Agent using enhanced multi-pass generation.
 
 TOPIC: {topic}
 
 FOLLOW THIS EXACT SEQUENCE:
 
 PHASE 1 - RESEARCH:
-Call analyze_full_stack to get data about the codebase.
+Call analyze_full_stack to get comprehensive data about all repositories.
 
 PHASE 2 - CREATE PLAN:
-After reviewing the data, call create_document_plan with:
-- title: A clear document title
-- sections: Array of 4-6 sections, each with: id, heading, description
+After reviewing the data, call create_multi_pass_plan with:
+- title: A clear document title for "{topic}"
+- topic: "{topic}"
 
-PHASE 3 - WRITE SECTIONS:
-For EACH section in the plan:
-- Call write_section with section_id and comprehensive content
-- Content should be detailed Markdown based on your research
+PHASE 3 - GENERATE ARCHITECTURE:
+Call write_section with section_id="architecture" and write a comprehensive architecture overview based on analyze_full_stack data.
 
-PHASE 4 - COMPILE:
+PHASE 4 - GENERATE MODULE DOCS:
+For each section (core_modules, adapters, tools):
+- Call write_section with detailed API documentation based on the analyze_full_stack data
+- Include classes, methods, parameters, examples
+
+PHASE 5 - GENERATE EXAMPLES:
+Call write_section with section_id="examples" and practical code examples
+
+PHASE 6 - COMPILE:
 After ALL sections are written, call compile_document with filename: "{output_file}"
 
 RULES:
 - Complete each phase before moving to next
-- Do NOT skip steps or improvise
+- Use analyze_full_stack data to inform your writing
+- Be comprehensive but structured
 - When compile_document succeeds, you are DONE
 
 Start with PHASE 1: call analyze_full_stack now."""
@@ -326,8 +380,8 @@ Start with PHASE 1: call analyze_full_stack now."""
     print("-" * 40)
     
     step = 0
-    max_steps = 50  # Plan: 1 research + 1 plan + ~6 sections + 1 compile + overhead
-    current_phase = "RESEARCH"
+    max_steps = 15  # Quick test: 1 research + 1 plan + 3 sections + 1 compile = ~6 steps, allow 2x for safety
+    current_phase = "PREPROCESSING"
     
     for event in agent.stream(
         {"messages": [HumanMessage(content=prompt)]},
@@ -345,10 +399,18 @@ Start with PHASE 1: call analyze_full_stack now."""
                     tool_name = tc.get('name')
                     
                     # Track phase
-                    if tool_name == "analyze_full_stack":
-                        current_phase = "RESEARCH"
-                    elif tool_name == "create_document_plan":
+                    if tool_name == "analyze_codebase_structure":
+                        current_phase = "PREPROCESSING"
+                    elif tool_name == "create_semantic_clusters":
+                        current_phase = "PREPROCESSING"
+                    elif tool_name == "build_dependency_graph":
+                        current_phase = "PREPROCESSING"
+                    elif tool_name == "calculate_pagerank_scores":
+                        current_phase = "PREPROCESSING"
+                    elif tool_name == "create_multi_pass_plan" or tool_name == "create_document_plan":
                         current_phase = "PLANNING"
+                    elif tool_name == "set_preprocessing_data":
+                        current_phase = "STORING_DATA"
                     elif tool_name == "write_section":
                         current_phase = "WRITING"
                     elif tool_name == "compile_document":
@@ -367,6 +429,8 @@ Start with PHASE 1: call analyze_full_stack now."""
             
             elif isinstance(last, ToolMessage):
                 content = str(last.content)
+                # Show tool response (truncated)
+                print(f"📥 [{step}] Tool response: {content[:200]}...")
                 # Check for document saved message
                 if "document_saved" in content:
                     try:
@@ -390,9 +454,19 @@ Start with PHASE 1: call analyze_full_stack now."""
                         print(f"   ✏️ Progress: {completed}/{total} sections")
                     except:
                         pass
+            
+            elif hasattr(last, 'content') and last.content and not hasattr(last, 'tool_calls'):
+                # Agent generated text response without tool calls - might be stopping
+                content = str(last.content)
+                if len(content) > 50:
+                    print(f"💬 [{step}] Agent text (no tools): {content[:200]}...")
         
         if step >= max_steps:
-            print(f"\n⚠️ Max steps reached ({max_steps})")
+            logger.warning(f"Max steps reached ({max_steps}) - stopping to prevent infinite loop", extra={
+                "max_steps": max_steps,
+                "current_phase": current_phase
+            })
+            print(f"\n⚠️ Max steps reached ({max_steps}) - stopping")
             break
     
     print("\n" + "=" * 60)

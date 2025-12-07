@@ -35,3 +35,4 @@ The registry can be used by the Nexus compiler to:
 2. Generate workflows dynamically based on discovered tools
 3. Update workflows when new tools become available
 
+

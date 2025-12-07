@@ -1,12 +1,14 @@
 """
-Document Writer - Structured document generation with Plan-Execute pattern.
+Document Writer - Enhanced structured document generation with Plan-Execute pattern.
 
-Pattern: Plan → Execute Steps → Compile
+Pattern: Preprocess → Plan → Multi-Pass Execute → Compile
+- Preprocessing: Codebase analysis, clustering, dependency graphs
 - Planner creates outline (deterministic structure)
-- Executor fills each section (bounded iterations)
+- Multi-pass executor: Architecture → Modules → Examples
 - Compiler saves final document
 
 No churning because each phase has clear completion criteria.
+Enhanced with Qwen-specific optimizations and multi-pass generation.
 """
 
 from pathlib import Path
@@ -22,11 +24,18 @@ OUTPUT_DIR.mkdir(exist_ok=True)
 class DocumentPlan:
     """Structured document plan - prevents unbounded generation."""
     
-    def __init__(self, title: str, sections: List[Dict]):
+    def __init__(self, title: str, sections: List[Dict], generation_mode: str = "standard"):
         self.title = title
         self.sections = sections  # [{id, heading, description}]
         self.content = {}  # section_id -> content
         self.created_at = datetime.utcnow().isoformat()
+        self.generation_mode = generation_mode  # "standard" or "multi_pass"
+        self.preprocessing_data = {}  # Store clustering, dependency graph, etc.
+        self.pass_status = {
+            "architecture": False,
+            "modules": False,
+            "examples": False
+        }
     
     def to_dict(self) -> dict:
         return {
@@ -35,7 +44,9 @@ class DocumentPlan:
             "content": self.content,
             "created_at": self.created_at,
             "completed_sections": len(self.content),
-            "total_sections": len(self.sections)
+            "total_sections": len(self.sections),
+            "generation_mode": self.generation_mode,
+            "pass_status": self.pass_status
         }
 
 
@@ -191,6 +202,174 @@ def get_plan_status() -> dict:
     return _active_plan.to_dict()
 
 
+def set_preprocessing_data(clusters: dict = None, dependency_graph: dict = None, 
+                          pagerank_scores: dict = None) -> dict:
+    """
+    Store preprocessing data for multi-pass generation.
+    Called after codebase analysis.
+    """
+    global _active_plan
+    
+    if _active_plan is None:
+        return {"error": "Create a document plan first"}
+    
+    _active_plan.preprocessing_data = {
+        "clusters": clusters or {},
+        "dependency_graph": dependency_graph or {},
+        "pagerank_scores": pagerank_scores or {}
+    }
+    
+    return {
+        "status": "preprocessing_data_stored",
+        "clusters": bool(clusters),
+        "dependency_graph": bool(dependency_graph),
+        "pagerank_scores": bool(pagerank_scores)
+    }
+
+
+def get_qwen_prompt_template(pass_type: str, context: dict) -> str:
+    """
+    Generate Qwen-optimized prompts for different documentation passes.
+    
+    pass_type: "architecture", "module_detail", "code_examples"
+    """
+    base_system = "You are Qwen, created by Alibaba Cloud. You are a technical documentation expert who generates comprehensive, accurate API documentation with code examples."
+    
+    if pass_type == "architecture":
+        clusters = context.get("clusters", {})
+        dependency_graph = context.get("dependency_graph", {})
+        top_files = context.get("top_files", [])
+        
+        prompt = f"""{base_system}
+
+Analyze this codebase structure and generate a comprehensive architecture overview.
+
+CODEBASE STRUCTURE:
+{json.dumps(clusters, indent=2)[:2000]}...
+
+DEPENDENCY GRAPH:
+{json.dumps(dependency_graph, indent=2)[:2000]}...
+
+TOP IMPORTANT FILES (by PageRank):
+{json.dumps(top_files[:10], indent=2)[:1000]}...
+
+Generate a comprehensive architecture overview covering:
+1. System purpose and key capabilities
+2. Major components and their responsibilities
+3. Data flow and integration points
+4. Technology stack and frameworks
+5. Key design patterns used
+
+Use clear markdown with diagrams (mermaid syntax where appropriate).
+Be specific and reference actual module names and relationships.
+"""
+    
+    elif pass_type == "module_detail":
+        module_info = context.get("module_info", {})
+        related_modules = context.get("related_modules", [])
+        architecture_context = context.get("architecture_context", "")
+        
+        prompt = f"""{base_system}
+
+Context from Architecture: {architecture_context[:500]}...
+
+MODULE TO DOCUMENT:
+{json.dumps(module_info, indent=2)[:3000]}...
+
+RELATED MODULES:
+{json.dumps(related_modules, indent=2)[:1000]}...
+
+Generate detailed API documentation for this module:
+1. Module purpose and use cases
+2. Public API surface (classes, methods, endpoints)
+3. Parameters, return types, exceptions
+4. Code examples for each major function
+5. Integration patterns
+
+Format as professional API reference (like Swagger/OpenAPI style).
+Be thorough but concise. Include actual code signatures.
+"""
+    
+    elif pass_type == "code_examples":
+        api_docs = context.get("api_docs", [])
+        use_case = context.get("use_case", "common usage")
+        
+        prompt = f"""{base_system}
+
+Based on this API documentation:
+{json.dumps(api_docs, indent=2)[:2000]}...
+
+Create practical code examples showing:
+1. Authentication/initialization
+2. Common use case: {use_case}
+3. Error handling patterns
+4. End-to-end workflow
+
+Provide runnable Python code with explanations.
+Make examples realistic and production-ready.
+"""
+    
+    else:
+        prompt = f"{base_system}\n\nGenerate documentation based on: {json.dumps(context, indent=2)[:1000]}..."
+    
+    return prompt
+
+
+def create_multi_pass_plan(title: str, topic: str) -> dict:
+    """
+    Create a multi-pass document plan optimized for comprehensive documentation.
+    
+    Passes:
+    1. Architecture overview
+    2. Module-by-module detailed docs
+    3. Code examples and tutorials
+    """
+    global _active_plan
+    
+    sections = [
+        {
+            "id": "architecture",
+            "heading": "Architecture Overview",
+            "description": "High-level system architecture, components, and design patterns",
+            "pass": "architecture"
+        },
+        {
+            "id": "core_modules",
+            "heading": "Core Modules",
+            "description": "Detailed documentation of core modules and their APIs",
+            "pass": "modules"
+        },
+        {
+            "id": "adapters",
+            "heading": "Adapters and Integrations",
+            "description": "Integration layer and adapter modules",
+            "pass": "modules"
+        },
+        {
+            "id": "tools",
+            "heading": "Tools and Utilities",
+            "description": "Tool definitions, MCP servers, and utility functions",
+            "pass": "modules"
+        },
+        {
+            "id": "examples",
+            "heading": "Code Examples and Tutorials",
+            "description": "Practical examples and usage patterns",
+            "pass": "examples"
+        }
+    ]
+    
+    _active_plan = DocumentPlan(title, sections, generation_mode="multi_pass")
+    
+    return {
+        "status": "multi_pass_plan_created",
+        "title": title,
+        "topic": topic,
+        "sections": [{"id": s["id"], "heading": s["heading"], "pass": s["pass"]} for s in sections],
+        "next_step": "Call set_preprocessing_data with analysis results, then start with architecture pass"
+    }
+
+
 # Tool definitions
 TOOLS = [
     {
@@ -245,6 +424,43 @@ TOOLS = [
         "inputSchema": {
             "type": "object",
             "properties": {}
+        }
+    },
+    {
+        "name": "set_preprocessing_data",
+        "description": "Store preprocessing data (clusters, dependency graph, PageRank scores) for multi-pass generation",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "clusters": {"type": "object", "description": "Semantic clusters from codebase analysis"},
+                "dependency_graph": {"type": "object", "description": "Dependency graph data"},
+                "pagerank_scores": {"type": "object", "description": "PageRank importance scores"}
+            }
+        }
+    },
+    {
+        "name": "create_multi_pass_plan",
+        "description": "Create a multi-pass document plan (Architecture → Modules → Examples) for comprehensive documentation",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string", "description": "Document title"},
+                "topic": {"type": "string", "description": "Document topic/theme"}
+            },
+            "required": ["title", "topic"]
+        }
+    },
+    {
+        "name": "get_qwen_prompt_template",
+        "description": "Get Qwen-optimized prompt template for a specific documentation pass",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "pass_type": {"type": "string", "enum": ["architecture", "module_detail", "code_examples"], 
+                             "description": "Type of documentation pass"},
+                "context": {"type": "object", "description": "Context data for the prompt"}
+            },
+            "required": ["pass_type", "context"]
         }
     }
 ]

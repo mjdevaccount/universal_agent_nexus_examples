@@ -4,9 +4,9 @@ websockets>=12.0
 pydantic>=2.5.0
 python-multipart>=0.0.6
 pyyaml>=6.0
-universal-agent-fabric==0.1.1
-universal-agent-nexus==1.0.3
-universal-agent-arch==0.2.0
+universal-agent-fabric>=0.2.1
+universal-agent-nexus>=2.0.0
+universal-agent-arch>=0.3.0
 
 # LLM Providers
 openai>=1.0.0

@@ -93,3 +93,4 @@ As long as it supports HTTP transport, it will work
 
 The fact that Cursor *can* use MCP servers doesn't mean these are Cursor-specific. MCP is an open standard.
 
+

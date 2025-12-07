@@ -98,3 +98,4 @@ def get_registry() -> ToolRegistry:
     """Get the global tool registry instance."""
     return _registry
 
+
