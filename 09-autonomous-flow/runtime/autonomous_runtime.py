@@ -68,7 +68,7 @@ def create_runtime_from_manifest(manifest):
     
     # Get LLM model from manifest
     router_config = manifest.get('routers', [{}])[0]
-    model = router_config.get('model', 'qwen2.5-coder:14b')
+    model = router_config.get('model', 'qwen3')
     
     # Create LLM with tools - this enables autonomous tool calling
     print(f"   ✅ Initializing Ollama LLM: {model}")

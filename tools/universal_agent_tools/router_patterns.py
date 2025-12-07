@@ -30,7 +30,7 @@ def build_decision_agent_manifest(
     Args:
         agent_name: Display and manifest name.
         system_message: System prompt for the router node.
-        llm: LLM reference (e.g., ``local://qwen2.5-32b``).
+        llm: LLM reference (e.g., ``local://qwen3``).
         routes: A list of RouteDefinition objects describing each decision path.
         formatter_prompt: Prompt used by the final formatting task.
         tools: Optional tool definitions to include with the manifest.

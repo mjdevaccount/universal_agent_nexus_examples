@@ -16,7 +16,7 @@ graphs:
     kind: router
     label: Autonomous Agent
     config:
-      llm: qwen2.5-coder:14b
+      llm: qwen3
       system_message: 'You are an autonomous agent that can discover, plan, and execute
         tasks using available tools.
 
@@ -353,6 +353,6 @@ tools:
 routers:
 - name: tool_planner
   llm_provider: ollama
-  model: qwen2.5-coder:14b
+  model: qwen3
   system_message: Plan which tools to use based on available capabilities
 policies: []

@@ -109,8 +109,8 @@ def create_agent(task_type: str = "sync"):
     logger.info(f"Loaded {len(tools)} tools", extra={"tool_count": len(tools), "server": MCP_SERVER})
     
     # Create LLM
-    llm, _ = create_llm_with_tools(tools, model="qwen2.5-coder:14b")
-    logger.info("LLM ready", extra={"model": "qwen2.5-coder:14b"})
+    llm, _ = create_llm_with_tools(tools, model="qwen3")
+    logger.info("LLM ready", extra={"model": "qwen3"})
     
     # Build graph
     def agent_node(state: AgentState):

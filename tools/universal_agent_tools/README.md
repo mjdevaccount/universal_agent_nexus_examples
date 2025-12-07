@@ -68,7 +68,7 @@ tools = [
 manifest = build_decision_agent_manifest(
     agent_name="issue-director",
     system_message="Route incoming requests to bug triage or feature prioritization.",
-    llm="local://qwen2.5-32b",
+    llm="local://qwen3",
     routes=routes,
     tools=tools,
 )

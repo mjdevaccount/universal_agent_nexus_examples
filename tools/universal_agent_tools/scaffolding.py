@@ -17,7 +17,7 @@ class OrganizationAgentFactory:
                 label=f"Team {team_name} Router",
                 config={
                     "system_message": f"You are the {team_name} team coordinator.",
-                    "llm": "local://qwen2.5-32b",
+                    "llm": "local://qwen3",
                 },
             ),
             NodeIR(
@@ -59,7 +59,7 @@ class OrganizationAgentFactory:
             label="Organization Router",
             config={
                 "system_message": "Route query to HR, Engineering, or Finance team.",
-                "llm": "local://qwen2.5-32b",
+                "llm": "local://qwen3",
             },
         )
 
