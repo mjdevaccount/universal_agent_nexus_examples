@@ -1073,5 +1073,126 @@ def parse_json_from_message(content: str) -> dict:
 
 ---
 
-**Last Updated:** December 7, 2025 - v3.0.1 patterns, content moderation, and ETL pipeline learnings
+## Support Chatbot Patterns (Example 04)
+
+### Multi-Router Pattern
+
+**Use Case:** Multiple routers in one graph for different purposes (intent classification, sentiment analysis, response generation).
+
+**Pattern:**
+```yaml
+nodes:
+  - id: classify_intent
+    kind: router
+    router_ref: intent_classifier  # Routes to handlers
+  
+  - id: sentiment_check
+    kind: router
+    router_ref: sentiment_router  # Routes: escalate or handle
+  
+  - id: generate_response
+    kind: router
+    router_ref: response_generator  # Generates final response
+
+routers:
+  - name: intent_classifier
+    system_message: "Classify intent: faq, technical, billing, complaint, or other"
+    default_model: "ollama://qwen3:8b"
+  
+  - name: sentiment_router
+    system_message: "Analyze sentiment: respond with 'escalate' or 'handle'"
+    default_model: "ollama://qwen3:8b"
+  
+  - name: response_generator
+    system_message: "Generate helpful customer support response"
+    default_model: "ollama://qwen3:8b"
+```
+
+**Key Points:**
+- Each router has a specific purpose
+- Routers can route to handlers OR generate content
+- Use descriptive router names
+- Each router needs its own system message
+
+### Router for Content Generation
+
+**Use Case:** Use router node to generate actual content (not just routing decisions).
+
+**Pattern:**
+```yaml
+- id: generate_response
+  kind: router
+  router_ref: response_generator
+
+routers:
+  - name: response_generator
+    strategy: llm
+    system_message: |
+      You are a helpful customer support assistant.
+      Generate a helpful, empathetic response.
+    default_model: "ollama://qwen3:8b"
+```
+
+**Key Points:**
+- Router returns full response text (not just a word)
+- System message guides the response style
+- Response becomes the final output
+- No routing needed after content generation
+
+### Convergent Response Pattern
+
+**Use Case:** Multiple paths converge to a single response generator.
+
+**Pattern:**
+```yaml
+edges:
+  - from_node: search_knowledge
+    to_node: generate_response
+  - from_node: troubleshoot
+    to_node: generate_response
+  - from_node: handle_billing
+    to_node: generate_response
+  - from_node: sentiment_check
+    to_node: generate_response
+    condition:
+      route: "handle"
+```
+
+**Benefits:**
+- Single point for response formatting
+- Consistent response style
+- Easy to add post-processing
+- All paths get proper responses
+
+### Intent Classification Flow
+
+**Pattern:** Classify → Route → Handle → Respond
+
+```yaml
+edges:
+  - from_node: classify_intent
+    to_node: search_knowledge
+    condition:
+      route: "faq"
+  
+  - from_node: classify_intent
+    to_node: troubleshoot
+    condition:
+      route: "technical"
+  
+  - from_node: classify_intent
+    to_node: account_lookup
+    condition:
+      route: "billing"
+```
+
+**Key Points:**
+- Router returns single word for routing
+- Each intent gets dedicated handler
+- Handlers can be tools or tasks
+- All paths eventually converge
+
+---
+
+**Last Updated:** December 7, 2025 - v3.0.1 patterns: content moderation, ETL pipeline, and support chatbot learnings
 

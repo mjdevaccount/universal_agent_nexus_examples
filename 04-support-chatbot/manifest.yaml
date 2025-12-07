@@ -1,6 +1,6 @@
 name: support-chatbot
-version: "1.0.0"
-description: "Multi-step customer support chatbot with intelligent routing"
+version: "2.0.0"
+description: "Multi-step customer support chatbot with intelligent routing and escalation"
 
 graphs:
   - name: support_conversation
@@ -10,13 +10,6 @@ graphs:
         kind: router
         label: "Intent Classifier"
         router_ref: intent_classifier
-        config:
-          model: "local://qwen3"
-          prompt: |
-            Classify the user's intent from their message:
-            {user_message}
-            
-            Categories: faq, technical, billing, complaint, other
       
       - id: search_knowledge
         kind: tool
@@ -53,15 +46,9 @@ graphs:
             Account info: {account_info}
       
       - id: sentiment_check
-        kind: task
-        label: "Sentiment Analysis"
-        config:
-          model: "local://qwen3"
-          prompt: |
-            Analyze sentiment and urgency of this complaint:
-            {user_message}
-            
-            Return: sentiment_score (0-1), urgency (low/medium/high)
+        kind: router
+        label: "Sentiment & Urgency Analysis"
+        router_ref: sentiment_router
       
       - id: escalate_human
         kind: task
@@ -72,17 +59,9 @@ graphs:
           queue: "support_queue"
       
       - id: generate_response
-        kind: task
+        kind: router
         label: "Generate Response"
-        config:
-          model: "local://qwen3"
-          prompt: |
-            Generate a helpful, empathetic response based on:
-            - User message: {user_message}
-            - Intent: {intent}
-            - Context: {context}
-            
-            Be concise and offer next steps.
+        router_ref: response_generator
     
     edges:
       - from_node: classify_intent
@@ -138,22 +117,58 @@ graphs:
       - from_node: sentiment_check
         to_node: escalate_human
         condition:
-          trigger: success
-          expression: "result.sentiment_score < 0.3 or result.urgency == 'high'"
+          route: "escalate"
       
       - from_node: sentiment_check
         to_node: generate_response
         condition:
-          trigger: success
-          expression: "result.sentiment_score >= 0.3 and result.urgency != 'high'"
+          route: "handle"
 
 routers:
   - name: intent_classifier
     strategy: llm
-    system_message: "You are an intent classifier for customer support. Classify user messages into: faq, technical, billing, complaint, or other."
-    model_candidates:
-      - "local://qwen3"
-    default_model: "local://qwen3"
+    system_message: |
+      You are an intent classifier for customer support.
+      
+      Analyze the user's message and classify their intent into ONE of these categories:
+      - "faq" - General questions about products/services
+      - "technical" - Technical issues, bugs, errors, troubleshooting
+      - "billing" - Payment, invoices, subscriptions, account billing
+      - "complaint" - Negative feedback, frustration, dissatisfaction
+      - "other" - Anything else that doesn't fit the above categories
+      
+      Respond with ONE word only: faq, technical, billing, complaint, or other.
+      No explanations, no JSON, just the category word.
+    default_model: "ollama://qwen3:8b"
+  
+  - name: sentiment_router
+    strategy: llm
+    system_message: |
+      You analyze customer complaints for sentiment and urgency.
+      
+      Analyze the complaint and determine if it needs immediate escalation or can be handled automatically.
+      
+      Respond with ONE word:
+      - "escalate" - If sentiment is very negative (frustrated, angry) OR urgency is high
+      - "handle" - If sentiment is neutral/positive OR urgency is low/medium
+      
+      Respond with ONLY the word: escalate or handle.
+      No explanations, no JSON, just the word.
+    default_model: "ollama://qwen3:8b"
+  
+  - name: response_generator
+    strategy: llm
+    system_message: |
+      You are a helpful customer support assistant.
+      
+      Generate a helpful, empathetic response to the customer's inquiry.
+      Be concise, professional, and offer clear next steps.
+      
+      Use the context from previous steps (intent classification, troubleshooting, knowledge base results, etc.)
+      to provide a relevant and helpful response.
+      
+      Respond naturally as if you're a human support agent.
+    default_model: "ollama://qwen3:8b"
 
 tools:
   - name: knowledge_search
