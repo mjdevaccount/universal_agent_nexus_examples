@@ -11,7 +11,7 @@ graphs:
     description: null
     config:
       system_message: Decide whether to search documents or calculate risk.
-      llm: local://qwen2.5-32b
+      llm: local://qwen3
     source_location: null
     metadata:
       data: {}

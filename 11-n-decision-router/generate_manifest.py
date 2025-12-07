@@ -36,7 +36,7 @@ def build_manifest():
 
     tools = [
         ToolIR(name="data_quality_tool", description="Detect data anomalies and quality issues", protocol="mcp", config={"command": "mcp-data-quality", "args": ["--mode", "anomaly"]}),
-        ToolIR(name="growth_experiment_tool", description="Run A/B tests and growth experiments", protocol="mcp", config={"command": "mcp-growth-experiments", "args": ["--llm", "local://qwen2.5-32b"]}),
+        ToolIR(name="growth_experiment_tool", description="Run A/B tests and growth experiments", protocol="mcp", config={"command": "mcp-growth-experiments", "args": ["--llm", "local://qwen3"]}),
         ToolIR(name="customer_support_tool", description="Handle customer support requests and triage", protocol="mcp", config={"command": "mcp-support", "args": ["--kb", "/data/kb.sqlite"]}),
         ToolIR(name="reporting_tool", description="Generate reports and KPI summaries", protocol="mcp", config={"command": "mcp-reporting", "args": ["--metrics", "weekly"]}),
     ]
@@ -48,7 +48,7 @@ def build_manifest():
             " data_quality, growth_experiment, customer_support, reporting."
             " Respond with only the category name."
         ),
-        llm="local://qwen2.5-32b",
+        llm="local://qwen3",
         routes=routes,
         formatter_prompt="Summarize the tool output clearly for the user:\n{result}",
         tools=tools,

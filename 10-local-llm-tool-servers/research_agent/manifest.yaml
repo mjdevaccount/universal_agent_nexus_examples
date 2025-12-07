@@ -11,7 +11,7 @@ graphs:
         kind: router
         label: "Research Intent Router"
         config:
-          llm: "local://qwen2.5-32b"
+          llm: "local://qwen3"
           system_message: |
             You are a research assistant. Analyze the user's research query.
 

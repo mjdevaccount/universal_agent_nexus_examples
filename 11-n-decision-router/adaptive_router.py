@@ -51,7 +51,7 @@ def build_base_manifest():
             " data_quality, growth_experiment, customer_support, reporting."
             " Respond with only the category name."
         ),
-        llm="local://qwen2.5-32b",
+        llm="local://qwen3",
         routes=routes,
         formatter_prompt="Summarize the tool output clearly for the user:\n{result}",
         tools=tools,

@@ -12,7 +12,7 @@ graphs:
       system_message: 'You are the routing coordinator. Classify the user''s request
         into one of: data_quality, growth_experiment, customer_support, reporting.
         Respond with only the category name.'
-      llm: local://qwen2.5-32b
+      llm: local://qwen3
   - id: data_quality_exec
     kind: tool
     label: Execute Data Quality
@@ -85,7 +85,7 @@ tools:
     command: mcp-growth-experiments
     args:
     - --llm
-    - local://qwen2.5-32b
+    - local://qwen3
 - name: customer_support_tool
   description: Handle customer support requests and triage
   protocol: mcp
