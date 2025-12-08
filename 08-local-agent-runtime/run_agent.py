@@ -131,8 +131,11 @@ class LocalAgentWorkflow(Workflow):
                 "confidence": 0.85,
             }
         
+        # ValidationNode expects 'extracted' key, so map tool_selection to extracted
+        state["extracted"] = state["tool_selection"]
+        
         # Validate
-        for node in self.nodes:
+        for node in self.nodes.values():
             if node.name == "tool_validator":
                 state = await node.execute(state)
                 break
@@ -159,7 +162,7 @@ async def main():
         model="qwen3:8b",
         base_url="http://localhost:11434",
         temperature=0.7,
-        num_predict=300,
+        # num_predict removed - using model default prevents empty responses
     )
     workflow = LocalAgentWorkflow(llm)
     
