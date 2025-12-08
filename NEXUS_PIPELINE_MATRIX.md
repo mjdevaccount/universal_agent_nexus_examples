@@ -42,6 +42,6 @@ print(f"Fabric backend: {meta['backend']}")
 
 1. Add/verify a manifest under the example root (`manifest.yaml` preferred).
 2. Document `nexus compile` using the command above (output `agent.py`).
-3. In the runtime entrypoint, call `resolve_fabric_from_env()` and route both compiled contexts and runtime feedback through Fabric (see `15-cached-content-moderation/run_fabric_demo.py`).
+3. In the runtime entrypoint, call `resolve_fabric_from_env()` and route both compiled contexts and runtime feedback through Fabric (see `14-cached-content-moderation/run_fabric_demo.py`).
 
 Aligning to this matrix keeps new examples predictable and ensures Cache Fabric is consistently available—even when an example does not yet require advanced caching.

@@ -267,11 +267,11 @@ EXAMPLES: Dict[str, ExampleSpec] = {
             CommandSpec("run", "python run_agent.py", "Execute the quickstart graph."),
         ],
     ),
-    "15": ExampleSpec(
-        code="15",
+    "14": ExampleSpec(
+        code="14",
         title="Cached Content Moderation",
         summary="Cache Fabric integration with observability and feedback.",
-        workdir=ROOT / "15-cached-content-moderation",
+        workdir=ROOT / "14-cached-content-moderation",
         manifest="manifest.yaml",
         fabric="Cache Fabric integrated end-to-end (compile + runtime).",
         commands=[
