@@ -121,8 +121,8 @@ class InnovationWorkflow(Workflow):
             state_schema=InnovationState,
             nodes=[intelligence, extraction, validation],
             edges=[
-                ("analysis", "extraction"),
-                ("extraction", "validation"),
+                ("innovation_analysis", "innovation_extraction"),
+                ("innovation_extraction", "innovation_validation"),
             ],
         )
     

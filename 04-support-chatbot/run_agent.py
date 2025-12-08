@@ -202,7 +202,7 @@ class SupportChatbotWorkflow(Workflow):
         state = {"user_message": user_message}
         
         # Classify intent
-        for node in self.nodes:
+        for node in self.nodes.values():
             if node.name == "intent_classifier":
                 state = await node.execute(state)
                 break

@@ -1117,6 +1117,9 @@ class ValidationNode(BaseNode):
                         elif field_type == int or (hasattr(field_type, '__origin__') and field_type.__origin__ is int):
                             data[field_name] = 0
                             repairs[field_name] = "defaulted_zero_int"
+                        elif hasattr(field_type, '__origin__') and field_type.__origin__ is list:
+                            data[field_name] = []
+                            repairs[field_name] = "defaulted_empty_list"
                         else:
                             data[field_name] = None
                             repairs[field_name] = "defaulted_none"
@@ -1133,7 +1136,10 @@ class ValidationNode(BaseNode):
                 elif field_type == int and not isinstance(value, int):
                     needs_type_fix = True
                 
-                if needs_type_fix:
+                # Check for List type
+                is_list_type = (hasattr(field_type, '__origin__') and field_type.__origin__ is list)
+                
+                if needs_type_fix or (is_list_type and not isinstance(value, list)):
                     try:
                         if field_type == str:
                             data[field_name] = str(value) if value is not None else ""
@@ -1144,6 +1150,28 @@ class ValidationNode(BaseNode):
                         elif field_type == int:
                             data[field_name] = int(float(value))  # Allow "3.0" -> 3
                             repairs[field_name] = "coerced_to_int"
+                        elif is_list_type:
+                            # List type - convert string 'None' or invalid values to empty list
+                            if value is None or str(value).lower() in ('none', 'null', ''):
+                                data[field_name] = []
+                                repairs[field_name] = "converted_to_empty_list"
+                            elif isinstance(value, str):
+                                # Try to parse as JSON list or split by comma
+                                try:
+                                    parsed = json.loads(value)
+                                    if isinstance(parsed, list):
+                                        data[field_name] = parsed
+                                        repairs[field_name] = "parsed_string_to_list"
+                                    else:
+                                        data[field_name] = []
+                                        repairs[field_name] = "converted_to_empty_list"
+                                except:
+                                    # Split by comma as fallback
+                                    data[field_name] = [v.strip() for v in value.split(',') if v.strip()]
+                                    repairs[field_name] = "split_string_to_list"
+                            else:
+                                data[field_name] = []
+                                repairs[field_name] = "converted_to_empty_list"
                     except (ValueError, TypeError):
                         # Can't coerce, will be caught by validation
                         pass

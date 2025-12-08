@@ -114,8 +114,8 @@ class AutonomousWorkflow(Workflow):
             state_schema=AutonomousState,
             nodes=[planner, executor, reflector],
             edges=[
-                ("plan", "execution_result"),
-                ("execution_result", "reflection"),
+                ("plan_generator", "execution_simulator"),
+                ("execution_simulator", "reflection_validator"),
             ],
         )
     

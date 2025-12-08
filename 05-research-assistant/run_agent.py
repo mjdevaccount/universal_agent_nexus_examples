@@ -93,8 +93,8 @@ class ResearchWorkflow(Workflow):
             state_schema=ResearchState,
             nodes=[intelligence, extraction, validation],
             edges=[
-                ("analysis", "extraction"),
-                ("extraction", "validation"),
+                ("research_analysis", "findings_extraction"),
+                ("findings_extraction", "research_validation"),
             ],
         )
     

@@ -103,7 +103,7 @@ class LocalAgentWorkflow(Workflow):
         
         # Run intelligence
         state = {"query": query}
-        for node in self.nodes:
+        for node in self.nodes.values():
             if node.name == "tool_planner":
                 state = await node.execute(state)
                 break

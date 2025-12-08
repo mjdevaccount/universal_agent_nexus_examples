@@ -35,6 +35,7 @@ from typing import Dict, Any
 from langchain_core.tools import Tool
 from langchain_ollama import ChatOllama
 
+sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent / "backend"))
 
 from shared.workflows import ToolCallingWorkflow
