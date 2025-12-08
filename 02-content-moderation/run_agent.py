@@ -211,14 +211,14 @@ async def main():
         model="qwen3:8b",
         base_url="http://localhost:11434",
         temperature=0.8,  # Creative reasoning
-        num_predict=500,
+        # num_predict removed - using model default prevents empty responses
     )
     
     llm_extraction = ChatOllama(
         model="qwen3:8b",
         base_url="http://localhost:11434",
         temperature=0.1,  # Deterministic extraction
-        num_predict=200,
+        # num_predict removed - using model default prevents empty responses
     )
     
     # Create workflow

@@ -104,11 +104,12 @@ async def main():
     print("="*60 + "\n")
     
     # Initialize LLM (local qwen3 via Ollama)
+    # Note: num_predict removed - using model default prevents empty responses
+    # when hitting token limits (done_reason: 'length' vs 'stop')
     llm = ChatOllama(
         model="qwen3:8b",
         base_url="http://localhost:11434",
         temperature=0.7,
-        num_predict=100,
     )
     
     # Create workflow
