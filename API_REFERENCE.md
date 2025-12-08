@@ -780,10 +780,10 @@ nodes:
 
 **Pattern:** Router makes ONE decision, routes to N tools.
 
-**Example:** See `tools/universal_agent_tools/router_patterns.py`
+**Example:** See `universal_agent_tools.patterns`
 
 ```python
-from universal_agent_tools.router_patterns import RouteDefinition, build_decision_agent_manifest
+from universal_agent_tools.patterns import RouteDefinition, build_decision_agent_manifest
 
 routes = [
     RouteDefinition(
@@ -853,11 +853,11 @@ edges:
 
 ### Existing Helpers
 
-**1. Observability Helper** (`universal_agent_tools/observability_helper.py`)
+**1. Observability Helper** (`universal_agent_tools.observability`)
 - `setup_observability()` - One-line OpenTelemetry setup
 - `trace_runtime_execution()` - Context manager for tracing
 
-**2. Router Patterns** (`tools/universal_agent_tools/router_patterns.py`)
+**2. Router Patterns** (`universal_agent_tools.patterns`)
 - `RouteDefinition` - Route configuration dataclass
 - `build_decision_agent_manifest()` - Single-decision router builder
 
