@@ -79,7 +79,7 @@ The wrapper is intentionally conservative: by default it only prints the command
 ## Promoted abstractions
 
 - **Cache Fabric Layer** – Use the shared helpers in `shared/cache_fabric/` instead of ad-hoc caching. The cached content moderation example already routes compiler output, runtime executions, and feedback through this layer while supporting Redis and vector backends.【F:15-cached-content-moderation/run_fabric_demo.py†L19-L129】
-- **Observability helper** – Prefer `universal_agent_tools.observability_helper` for tracing instead of per-example wrappers; it integrates cleanly with the Cache Fabric workflow.【F:15-cached-content-moderation/run_fabric_demo.py†L17-L23】【F:15-cached-content-moderation/run_fabric_demo.py†L36-L96】
+- **Observability helper** – Prefer `universal_agent_tools.observability` for tracing instead of per-example wrappers; it integrates cleanly with the Cache Fabric workflow.【F:15-cached-content-moderation/run_fabric_demo.py†L17-L23】【F:15-cached-content-moderation/run_fabric_demo.py†L36-L96】
 - **MCP-aware runtimes** – Use LangGraph runtimes paired with MCP tool discovery (examples 08–10) rather than custom request loops. The wrapper highlights which examples already follow this pattern so new ones can align.
 
 ## Recommendations

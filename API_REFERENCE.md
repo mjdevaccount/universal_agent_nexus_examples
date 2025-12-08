@@ -579,7 +579,7 @@ from langchain_core.messages import HumanMessage
 from universal_agent_nexus.compiler import parse
 from universal_agent_nexus.ir.pass_manager import create_default_pass_manager, OptimizationLevel
 from universal_agent_nexus.adapters.langgraph import LangGraphRuntime
-from universal_agent_tools.observability_helper import setup_observability, trace_runtime_execution
+from universal_agent_tools.observability import setup_observability, trace_runtime_execution
 
 async def main():
     # 1. Setup observability (one line)
