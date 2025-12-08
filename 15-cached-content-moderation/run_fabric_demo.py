@@ -22,9 +22,10 @@ from universal_agent_nexus.ir.pass_manager import create_default_pass_manager, O
 from universal_agent_nexus.adapters.langgraph import LangGraphRuntime
 
 # Cache Fabric imports
-from shared.cache_fabric import ContextScope, resolve_fabric_from_env
-from shared.cache_fabric.nexus_integration import store_manifest_contexts, get_router_prompt_from_fabric
-from shared.cache_fabric.runtime_integration import track_execution_with_fabric, record_feedback_to_fabric
+from _lib.cache_fabric.base import ContextScope
+from _lib.cache_fabric.defaults import resolve_fabric_from_env
+from _lib.cache_fabric.nexus_integration import store_manifest_contexts, get_router_prompt_from_fabric
+from _lib.cache_fabric.runtime_integration import track_execution_with_fabric, record_feedback_to_fabric
 from _lib.tools.universal_agent_tools.observability_helper import setup_observability, trace_runtime_execution
 
 
