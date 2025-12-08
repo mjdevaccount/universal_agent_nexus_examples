@@ -50,6 +50,23 @@ from shared.workflows.nodes import (
     NodeStatus,
 )
 
+# SOLID Refactoring: Import abstractions and strategies
+try:
+    from shared.workflows.abstractions import IJSONRepairStrategy, ILLMProvider, IValidationStrategy
+    from shared.workflows.strategies import (
+        IncrementalRepairStrategy,
+        LLMRepairStrategy,
+        RegexRepairStrategy,
+        StrictValidationStrategy,
+        RetryValidationStrategy,
+        BestEffortValidationStrategy,
+    )
+    from shared.workflows.llm_adapter import LangChainLLMAdapter
+    SOLID_REFACTORING_AVAILABLE = True
+except ImportError:
+    # Fallback for backward compatibility
+    SOLID_REFACTORING_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
 
 
@@ -280,6 +297,19 @@ class ExtractionNode(BaseNode):
             "llm_repair",
             "regex_fallback",
         ]
+        
+        # SOLID Refactoring: Initialize strategy objects if available
+        self._repair_strategies = []
+        if SOLID_REFACTORING_AVAILABLE:
+            llm_adapter = LangChainLLMAdapter(llm)
+            strategy_map = {
+                "incremental_repair": IncrementalRepairStrategy(),
+                "llm_repair": LLMRepairStrategy(llm_adapter),
+                "regex_fallback": RegexRepairStrategy(),
+            }
+            for strategy_name in self.json_repair_strategies:
+                if strategy_name in strategy_map:
+                    self._repair_strategies.append(strategy_map[strategy_name])
     
     async def execute(self, state: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -358,42 +388,12 @@ class ExtractionNode(BaseNode):
                 except json.JSONDecodeError as e:
                     logger.warning(f"[{self.name}] Direct parse failed: {e}")
                     
-                    # Strategy 2: Incremental repair
-                    if "incremental_repair" in self.json_repair_strategies:
-                        try:
-                            json_text = self._repair_json_incremental(json_text)
-                            data = json.loads(json_text)
-                            warnings.append("JSON required incremental repair")
-                            logger.info(f"[{self.name}] Incremental repair successful")
-                        except Exception as e2:
-                            logger.warning(f"[{self.name}] Incremental repair failed: {e2}")
-                    
-                    # Strategy 3: LLM repair
-                    if data is None and "llm_repair" in self.json_repair_strategies:
-                        try:
-                            repaired_text = await self._repair_json_with_llm(
-                                json_text
-                            )
-                            data = json.loads(repaired_text)
-                            warnings.append("JSON required LLM repair")
-                            logger.info(f"[{self.name}] LLM repair successful")
-                        except Exception as e3:
-                            logger.warning(f"[{self.name}] LLM repair failed: {e3}")
-                    
-                    # Strategy 4: Regex extraction
-                    if data is None and "regex_fallback" in self.json_repair_strategies:
-                        try:
-                            data = self._extract_with_regex(
-                                json_text,
-                                state["analysis"]
-                            )
-                            warnings.append("JSON required regex extraction")
-                            logger.info(
-                                f"[{self.name}] Regex extraction successful "
-                                f"({len(data)} fields: {list(data.keys())})"
-                            )
-                        except Exception as e4:
-                            logger.warning(f"[{self.name}] Regex extraction failed: {e4}")
+                    # SOLID Refactoring: Use strategy pattern if available
+                    if SOLID_REFACTORING_AVAILABLE and self._repair_strategies:
+                        data = await self._repair_with_strategies(json_text, warnings)
+                    else:
+                        # Fallback to original implementation
+                        data = await self._repair_legacy(json_text, state, warnings)
                     
                     if data is None:
                         raise NodeExecutionError(
@@ -432,6 +432,75 @@ class ExtractionNode(BaseNode):
     
     def validate_input(self, state: Dict[str, Any]) -> bool:
         return "analysis" in state
+    
+    async def _repair_with_strategies(
+        self, 
+        json_text: str, 
+        warnings: List[str]
+    ) -> Optional[Dict[str, Any]]:
+        """
+        SOLID Refactoring: Use strategy pattern for JSON repair.
+        
+        Single Responsibility: Orchestrate repair strategies.
+        """
+        for strategy in self._repair_strategies:
+            try:
+                data = await strategy.repair(json_text, self.output_schema)
+                if data:
+                    warnings.append(f"JSON required {strategy.name}")
+                    logger.info(f"[{self.name}] {strategy.name} successful")
+                    return data
+            except Exception as e:
+                logger.debug(f"[{self.name}] {strategy.name} failed: {e}")
+        return None
+    
+    async def _repair_legacy(
+        self,
+        json_text: str,
+        state: Dict[str, Any],
+        warnings: List[str]
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Legacy repair implementation (backward compatibility).
+        
+        This maintains the original repair logic for cases where
+        strategies are not available.
+        """
+        data = None
+        
+        # Strategy 2: Incremental repair
+        if "incremental_repair" in self.json_repair_strategies:
+            try:
+                json_text = self._repair_json_incremental(json_text)
+                data = json.loads(json_text)
+                warnings.append("JSON required incremental repair")
+                logger.info(f"[{self.name}] Incremental repair successful")
+            except Exception as e2:
+                logger.warning(f"[{self.name}] Incremental repair failed: {e2}")
+        
+        # Strategy 3: LLM repair
+        if data is None and "llm_repair" in self.json_repair_strategies:
+            try:
+                repaired_text = await self._repair_json_with_llm(json_text)
+                data = json.loads(repaired_text)
+                warnings.append("JSON required LLM repair")
+                logger.info(f"[{self.name}] LLM repair successful")
+            except Exception as e3:
+                logger.warning(f"[{self.name}] LLM repair failed: {e3}")
+        
+        # Strategy 4: Regex extraction
+        if data is None and "regex_fallback" in self.json_repair_strategies:
+            try:
+                data = self._extract_with_regex(json_text, state["analysis"])
+                warnings.append("JSON required regex extraction")
+                logger.info(
+                    f"[{self.name}] Regex extraction successful "
+                    f"({len(data)} fields: {list(data.keys())})"
+                )
+            except Exception as e4:
+                logger.warning(f"[{self.name}] Regex extraction failed: {e4}")
+        
+        return data
     
     def _repair_json_incremental(self, json_str: str, max_attempts: int = 3) -> str:
         """
@@ -774,6 +843,18 @@ class ValidationNode(BaseNode):
                 "Falling back to STRICT mode behavior."
             )
             self.mode = ValidationMode.STRICT
+        
+        # SOLID Refactoring: Initialize validation strategy if available
+        self._validation_strategy = None
+        if SOLID_REFACTORING_AVAILABLE:
+            llm_adapter = LangChainLLMAdapter(llm) if llm else None
+            strategy_map = {
+                ValidationMode.STRICT: StrictValidationStrategy(),
+                ValidationMode.RETRY: RetryValidationStrategy(),
+                ValidationMode.BEST_EFFORT: BestEffortValidationStrategy(),
+            }
+            if self.mode in strategy_map:
+                self._validation_strategy = strategy_map[self.mode]
     
     async def execute(self, state: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -841,16 +922,39 @@ class ValidationNode(BaseNode):
             # Layer 1: Pydantic validation with mode-specific repair
             validated = None
             validation_error = None
+            repairs = {}
             
-            try:
-                validated = self.output_schema(**data)
-                logger.info(f"[{self.name}] Schema validation passed (mode: {self.mode.value})")
-            except ValidationError as e:
-                validation_error = e
-                logger.info(f"[{self.name}] Schema validation failed: {e.error_count()} errors")
-                
-                # Mode-specific handling
-                if self.mode == ValidationMode.STRICT:
+            # SOLID Refactoring: Use strategy pattern if available
+            if SOLID_REFACTORING_AVAILABLE and self._validation_strategy:
+                try:
+                    llm_adapter = LangChainLLMAdapter(self.llm) if self.llm else None
+                    result = await self._validation_strategy.validate(
+                        data=data,
+                        schema=self.output_schema,
+                        validation_rules=self.validation_rules,
+                        llm=llm_adapter,
+                        max_retries=self.max_retries,
+                    )
+                    validated = self.output_schema(**result["validated"])
+                    warnings.extend(result.get("warnings", []))
+                    repairs = result.get("repairs", {})
+                    validation_outcome = result.get("outcome", "strict_pass")
+                except ValidationError as e:
+                    # Strategy failed, fall through to legacy handling
+                    validation_error = e
+                    logger.info(f"[{self.name}] Strategy validation failed: {e.error_count()} errors")
+            else:
+                # Legacy validation logic (backward compatibility)
+                try:
+                    validated = self.output_schema(**data)
+                    logger.info(f"[{self.name}] Schema validation passed (mode: {self.mode.value})")
+                except ValidationError as e:
+                    validation_error = e
+                    logger.info(f"[{self.name}] Schema validation failed: {e.error_count()} errors")
+            
+            # Legacy mode-specific handling (if strategy didn't handle it or not available)
+            if validated is None:
+                if validation_error and self.mode == ValidationMode.STRICT:
                     # STRICT: Fail immediately
                     raise NodeExecutionError(
                         node_name=self.name,
