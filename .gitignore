@@ -21,6 +21,7 @@ wheels/
 *.egg
 *.pyc
 *.pyo
+*.whl
 
 # Virtual environments
 .venv/
