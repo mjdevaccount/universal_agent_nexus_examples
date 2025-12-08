@@ -47,6 +47,18 @@ from shared.workflows.nodes import (
     NodeStatus,
 )
 
+# SOLID Refactoring: Import separated components
+try:
+    from shared.workflows.workflow_components import (
+        GraphBuilder,
+        WorkflowExecutor,
+        MetricsCollector,
+    )
+    SOLID_COMPONENTS_AVAILABLE = True
+except ImportError:
+    # Fallback for backward compatibility
+    SOLID_COMPONENTS_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
 
 
@@ -161,8 +173,21 @@ class Workflow:
                     f"Available: {node_names}"
                 )
         
-        # Topological sort to find first/last nodes
-        self._compute_topology()
+        # SOLID Refactoring: Initialize separated components
+        if SOLID_COMPONENTS_AVAILABLE:
+            self._graph_builder = GraphBuilder(
+                state_schema=state_schema,
+                nodes=self.nodes,
+                edges=edges,
+            )
+            self._metrics_collector = MetricsCollector(workflow_name=name)
+            self._executor = WorkflowExecutor(
+                workflow_name=name,
+                metrics_collector=self._metrics_collector,
+            )
+        else:
+            # Legacy: Compute topology manually
+            self._compute_topology()
         
         # Build graph (lazy - only when needed)
         self._graph = None
@@ -196,6 +221,14 @@ class Workflow:
         Returns:
             Compiled LangGraph workflow
         """
+        # SOLID Refactoring: Use GraphBuilder if available
+        if SOLID_COMPONENTS_AVAILABLE:
+            return self._graph_builder.build(
+                node_wrapper_factory=self._executor.create_node_wrapper,
+                workflow_name=self.name,
+            )
+        
+        # Legacy: Build graph manually
         logger.info(
             f"[{self.name}] Building LangGraph with {len(self.nodes)} nodes"
         )
@@ -252,8 +285,9 @@ class Workflow:
                 # Execute
                 state = await node.execute(state)
                 
-                # Store metrics
-                self._metrics[node.name] = node.get_metrics()
+                # Store metrics (legacy path)
+                if not SOLID_COMPONENTS_AVAILABLE:
+                    self._metrics[node.name] = node.get_metrics()
                 
                 logger.info(
                     f"[{self.name}] {node.name} succeeded "
@@ -267,9 +301,10 @@ class Workflow:
                     f"[{self.name}] {node.name} failed: {e}"
                 )
                 
-                # Store error metrics
-                metrics = node.get_metrics()
-                self._metrics[node.name] = metrics
+                # Store error metrics (legacy path)
+                if not SOLID_COMPONENTS_AVAILABLE:
+                    metrics = node.get_metrics()
+                    self._metrics[node.name] = metrics
                 
                 # Wrap in WorkflowExecutionError
                 raise WorkflowExecutionError(
@@ -317,20 +352,37 @@ class Workflow:
             print(result["analysis"])
             print(result["validated"])
         """
-        self._start_time = datetime.now()
-        self._metrics = {}
+        # SOLID Refactoring: Use MetricsCollector if available
+        if SOLID_COMPONENTS_AVAILABLE:
+            self._metrics_collector.start_execution()
+        else:
+            self._start_time = datetime.now()
+            self._metrics = {}
         
         logger.info(
             f"[{self.name}] Starting workflow execution"
         )
         
         try:
-            # Invoke async (LangGraph handles async nodes)
-            final_state = await self.graph.ainvoke(initial_state)
+            # SOLID Refactoring: Use WorkflowExecutor if available
+            if SOLID_COMPONENTS_AVAILABLE:
+                final_state = await self._executor.execute(
+                    graph=self.graph,
+                    initial_state=initial_state,
+                )
+                self._metrics_collector.end_execution()
+            else:
+                # Legacy: Execute directly
+                final_state = await self.graph.ainvoke(initial_state)
             
-            elapsed = (
-                datetime.now() - self._start_time
-            ).total_seconds()
+            if SOLID_COMPONENTS_AVAILABLE:
+                elapsed = (
+                    datetime.now() - self._metrics_collector.start_time
+                ).total_seconds() if self._metrics_collector.start_time else 0.0
+            else:
+                elapsed = (
+                    datetime.now() - self._start_time
+                ).total_seconds() if self._start_time else 0.0
             
             logger.info(
                 f"[{self.name}] Workflow completed "
@@ -429,6 +481,11 @@ class Workflow:
                 }
             }
         """
+        # SOLID Refactoring: Use MetricsCollector if available
+        if SOLID_COMPONENTS_AVAILABLE:
+            return self._metrics_collector.get_metrics()
+        
+        # Legacy: Calculate metrics manually
         total_duration = 0.0
         all_warnings = []
         

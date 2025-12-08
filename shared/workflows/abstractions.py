@@ -224,3 +224,102 @@ class IMetricsCollector(ABC):
         """
         pass
 
+
+# ============================================================================
+# Node Responsibility Interfaces (Interface Segregation Principle)
+# ============================================================================
+
+class IExecutable(ABC):
+    """
+    Interface for node execution.
+    
+    Separates execution concern from other responsibilities (ISP).
+    Nodes that only need to execute can implement just this.
+    """
+    
+    @abstractmethod
+    async def execute(self, state: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Execute node's work.
+        
+        Args:
+            state: Current workflow state
+        
+        Returns:
+            Updated state dict
+        """
+        pass
+
+
+class IValidatable(ABC):
+    """
+    Interface for input validation.
+    
+    Separates validation concern from execution (ISP).
+    Nodes can implement validation independently.
+    """
+    
+    @abstractmethod
+    def validate_input(self, state: Dict[str, Any]) -> bool:
+        """
+        Validate that state has required keys.
+        
+        Args:
+            state: Current workflow state
+        
+        Returns:
+            True if valid, False otherwise
+        """
+        pass
+    
+    @abstractmethod
+    def get_required_keys(self) -> List[str]:
+        """Get list of required state keys."""
+        pass
+
+
+class IErrorHandler(ABC):
+    """
+    Interface for error handling.
+    
+    Separates error handling concern from execution (ISP).
+    Nodes can implement custom error handling independently.
+    """
+    
+    @abstractmethod
+    async def on_error(
+        self,
+        error: Exception,
+        state: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Handle errors during execution.
+        
+        Args:
+            error: The exception that was raised
+            state: State at time of error
+        
+        Returns:
+            Updated state, or raise to propagate error
+        """
+        pass
+
+
+class IMetricsProvider(ABC):
+    """
+    Interface for metrics provision.
+    
+    Separates metrics concern from execution (ISP).
+    Nodes can provide metrics independently.
+    """
+    
+    @abstractmethod
+    def get_metrics(self) -> Dict[str, Any]:
+        """
+        Get execution metrics for this node.
+        
+        Returns:
+            Dict with execution stats
+        """
+        pass
+
