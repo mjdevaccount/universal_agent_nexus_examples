@@ -212,6 +212,7 @@ EXAMPLES: Dict[str, ExampleSpec] = {
         workdir=ROOT / "10-local-llm-tool-servers",
         commands=[
             CommandSpec("deps", "pip install -r requirements.txt", "Install shared toolkit dependencies."),
+            CommandSpec("run", "python organization_agent.py", "Run the organization-level scaffolded agent."),
             CommandSpec("org", "python organization_agent.py", "Run the organization-level scaffolded agent."),
             CommandSpec(
                 "research",

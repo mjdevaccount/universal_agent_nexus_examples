@@ -27,6 +27,11 @@ def resolve_fabric_from_env(default_backend: str = DEFAULT_BACKEND) -> Tuple[obj
     """
 
     backend = os.getenv("CACHE_BACKEND", default_backend)
+    
+    # Validate backend
+    if backend not in ["memory", "redis", "vector"]:
+        raise ValueError(f"Invalid CACHE_BACKEND: {backend}. Must be one of: memory, redis, vector")
+    
     redis_url = os.getenv("REDIS_URL", DEFAULT_REDIS_URL)
     vector_url = os.getenv("VECTOR_URL", os.getenv("CACHE_VECTOR_URL", DEFAULT_VECTOR_URL))
 
@@ -34,7 +39,7 @@ def resolve_fabric_from_env(default_backend: str = DEFAULT_BACKEND) -> Tuple[obj
     if backend == "redis":
         kwargs["redis_url"] = redis_url
     elif backend == "vector":
-        kwargs["url"] = vector_url
+        kwargs["vector_db_url"] = vector_url
 
     fabric = create_cache_fabric(backend, **kwargs)
 
