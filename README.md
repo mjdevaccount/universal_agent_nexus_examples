@@ -23,6 +23,14 @@ pip install universal-agent-nexus
 git clone https://github.com/mjdevaccount/universal_agent_nexus_examples.git
 cd universal_agent_nexus_examples
 
+# Install universal-agent-tools (for local development)
+# Note: This package is not yet published to PyPI, so clone and install in editable mode:
+cd ..
+git clone https://github.com/mjdevaccount/universal_agent_tools.git
+cd universal_agent_tools
+pip install -e .
+cd ../universal_agent_nexus_examples
+
 # Run an example
 cd 01-hello-world
 nexus compile manifest.yaml --target langgraph --output agent.py
