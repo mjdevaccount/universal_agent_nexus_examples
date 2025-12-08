@@ -14,7 +14,7 @@ async def main():
     # Create runtime with JSON extractor for structured research output
     runtime = NexusRuntime(
         manifest_path=Path(__file__).parent / "manifest.yaml",
-        graph_name="research_workflow",
+        graph_name="analyze_document",
         service_name="research-assistant",
         extractor=JSONExtractor(),
     )
