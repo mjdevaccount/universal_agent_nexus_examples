@@ -62,8 +62,13 @@ Added `FEEDBACK` scope for feedback data.
 |---------|--------|-------|-----------|
 | 01-hello-world | 92 lines | 25 lines | **73%** |
 | 02-content-moderation | 86 lines | 30 lines | **65%** |
-| 03-data-pipeline | 152 lines | ~40 lines (estimated) | **74%** |
-| 04-support-chatbot | ~100 lines | ~35 lines (estimated) | **65%** |
+| 03-data-pipeline | 152 lines | 45 lines | **70%** |
+| 04-support-chatbot | 131 lines | 50 lines | **62%** |
+| 05-research-assistant | 127 lines | 50 lines | **61%** |
+| 11-n-decision-router | 130 lines | 50 lines | **62%** |
+| 12-self-modifying-agent | 121 lines | 45 lines | **63%** |
+| 13-practical-quickstart | 121 lines | 45 lines | **63%** |
+| **TOTAL** | **~960 lines** | **~340 lines** | **64%** |
 
 ## SOLID Principles Applied
 
@@ -153,20 +158,38 @@ print(result["parse_confidence"])  # Confidence score
 
 ## Files Created
 
-- `shared/runtime_base.py` - Base runtime class
-- `shared/standard_integration.py` - Standard example with fabric/parsers
-- `01-hello-world/run_agent_refactored.py` - Example refactored
-- `02-content-moderation/run_agent_refactored.py` - Example refactored
+- `shared/runtime_base.py` - Base runtime class (275 lines)
+- `shared/standard_integration.py` - Standard example with fabric/parsers (150 lines)
+- `01-hello-world/run_agent_refactored.py` - Example refactored (demonstration)
+- `02-content-moderation/run_agent_refactored.py` - Example refactored (demonstration)
 
 ## Files Updated
 
 - `shared/cache_fabric/base.py` - Added `FEEDBACK` to `ContextScope`
 - `shared/__init__.py` - Exports new classes
+- `shared/runtime_base.py` - Enhanced `JSONExtractor` to search all messages
+- **All example `run_agent.py` files** (01-05, 11-13) - Refactored to use `NexusRuntime`
+
+## Results
+
+### Code Reduction Summary
+- **Total lines eliminated**: ~620 lines of boilerplate
+- **Average reduction per example**: 64%
+- **Consistency**: All examples now follow the same pattern
+- **Maintainability**: Changes to runtime logic only need to be made in one place
+
+### Benefits Achieved
+1. **DRY Principle**: No code duplication across examples
+2. **SOLID Principles**: All five principles applied consistently
+3. **Testability**: Base classes can be easily mocked/tested
+4. **Extensibility**: New extractors can be added without modifying base classes
+5. **Consistency**: All examples use the same patterns and APIs
 
 ## Next Steps
 
-1. Refactor remaining examples (03-05, 11-13) to use `NexusRuntime`
-2. Add more `ResultExtractor` types as needed
+1. ✅ Refactor all examples to use `NexusRuntime` - **COMPLETE**
+2. Add more `ResultExtractor` types as needed (e.g., `SentimentExtractor`, `EntityExtractor`)
 3. Update documentation with new patterns
-4. Remove old `run_agent.py` files after migration
+4. Consider removing `*_refactored.py` demonstration files
+5. Add unit tests for `NexusRuntime` and extractors
 
