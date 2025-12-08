@@ -39,8 +39,9 @@ from typing import (
 )
 from datetime import datetime
 from abc import abstractmethod
+from enum import Enum
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, Field as PydanticField
 from langchain_core.messages import HumanMessage, BaseMessage
 
 from shared.workflows.nodes import (
@@ -50,6 +51,19 @@ from shared.workflows.nodes import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class ValidationMode(str, Enum):
+    """
+    Validation mode for ValidationNode.
+    
+    STRICT: Fail fast on Pydantic error (no automatic repair)
+    RETRY: Use LLM repair loop with validation error feedback
+    BEST_EFFORT: Allow local defaults/fixes (for non-critical pipelines)
+    """
+    STRICT = "strict"
+    RETRY = "retry"
+    BEST_EFFORT = "best_effort"
 
 
 class IntelligenceNode(BaseNode):
@@ -625,11 +639,11 @@ class ExtractionNode(BaseNode):
 
 class ValidationNode(BaseNode):
     """
-    Semantic validation and repair node.
+    Semantic validation and repair node (December 2025 Pattern).
     
-    Single Responsibility: Validate extracted data and repair if possible.
+    Single Responsibility: Validate extracted data with configurable repair strategies.
     
-    Temperature: 0.0 (strict enforcement)
+    Temperature: 0.0 (strict enforcement) or LLM temperature for repair loops
     
     Input Requirements:
         - state["extracted"]: Dict from extraction node
@@ -637,32 +651,63 @@ class ValidationNode(BaseNode):
     Output:
         - Adds `validated` key with validated/repaired data
         - Adds `validation_warnings` list
+        - Adds `validation_metadata` dict with mode, outcome, repairs
+    
+    Validation Modes (December 2025 Best Practice):
+        1. STRICT: Fail fast on Pydantic error (no automatic repair)
+           - Use for: Critical pipelines (finance, healthcare, legal)
+           - Behavior: Raises NodeExecutionError on validation failure
+        
+        2. RETRY: LLM repair loop with validation error feedback
+           - Use for: Production pipelines needing semantic repair
+           - Behavior: Re-prompts LLM with Pydantic errors, retries up to max_retries
+           - Pattern: Matches BentoML, Haystack, Instructor-style validation
+        
+        3. BEST_EFFORT: Local defaults/fixes (mechanical repairs only)
+           - Use for: Analytics, internal dashboards, non-critical contexts
+           - Behavior: Applies safe type coercion, uses schema defaults, minimal guessing
     
     Validation Layers:
-        1. Pydantic schema validation (type checking)
-        2. Custom semantic rules (business logic)
-        3. Bounds checking and repair (clamp values)
+        1. Pydantic schema validation (types, constraints, enums)
+        2. Custom semantic rules (business logic via validation_rules)
+        3. Schema-driven repair (uses Field(ge=, le=, default=) from Pydantic)
     
-    Design Pattern: Decorator
-        Validation can be stacked (schema → rules → bounds).
+    Design Pattern: Strategy
+        Different validation modes can be swapped without changing node logic.
+        Domain semantics live in Pydantic schemas and validation_rules, not in the node.
     
-    Example:
+    Example (STRICT mode - recommended for production):
         validation = ValidationNode(
             output_schema=AdoptionPrediction,
+            mode=ValidationMode.STRICT,
             validation_rules={
                 "timeline_sanity": lambda x: 1 <= x["adoption_timeline_months"] <= 60,
             }
         )
-        
-        state = await validation.execute({"extracted": data})
-        # state["validated"] = repaired_and_validated_data
+    
+    Example (RETRY mode - with LLM repair):
+        validation = ValidationNode(
+            output_schema=AdoptionPrediction,
+            mode=ValidationMode.RETRY,
+            llm=repair_llm,  # Low-temperature LLM for repair
+            max_retries=2,
+        )
+    
+    Example (BEST_EFFORT mode - for analytics):
+        validation = ValidationNode(
+            output_schema=AdoptionPrediction,
+            mode=ValidationMode.BEST_EFFORT,
+        )
     """
     
     def __init__(
         self,
         output_schema: Type[BaseModel],
         validation_rules: Dict[str, Callable] = None,
-        repair_on_fail: bool = True,
+        mode: ValidationMode = None,  # None for backward compatibility
+        repair_on_fail: bool = None,  # DEPRECATED: Use mode instead
+        llm: Any = None,  # Optional LLM for RETRY mode repair loop
+        max_retries: int = 2,  # Max retries for RETRY mode
         name: str = "validation",
         description: str = "Validate and repair extracted data",
     ):
@@ -671,9 +716,17 @@ class ValidationNode(BaseNode):
         
         Args:
             output_schema: Pydantic model to validate against
+                Should use Field(ge=, le=, default=) for constraints
             validation_rules: Dict of {rule_name: rule_func}
                 where rule_func(data) returns True if valid, raises/returns False otherwise
-            repair_on_fail: Whether to attempt repairs on validation failure
+            mode: ValidationMode enum (STRICT, RETRY, BEST_EFFORT)
+                If None, inferred from repair_on_fail for backward compatibility
+            repair_on_fail: DEPRECATED - Use mode instead
+                If True, maps to BEST_EFFORT mode
+                If False, maps to STRICT mode
+            llm: Optional LangChain ChatModel for RETRY mode repair loop
+                Required if mode=ValidationMode.RETRY
+            max_retries: Maximum retry attempts for RETRY mode (default: 2)
             name: Node identifier
             description: Human-readable description
         
@@ -682,21 +735,67 @@ class ValidationNode(BaseNode):
                 "timeline_bounds": lambda x: 1 <= x["adoption_timeline_months"] <= 60,
                 "disruption_positive": lambda x: x["disruption_score"] >= 0,
             }
+        
+        Note:
+            For STRICT mode, validation failures raise NodeExecutionError immediately.
+            For RETRY mode, validation errors are fed back to LLM for repair.
+            For BEST_EFFORT mode, only safe mechanical repairs are applied.
         """
         super().__init__(name=name, description=description)
         self.output_schema = output_schema
         self.validation_rules = validation_rules or {}
-        self.repair_on_fail = repair_on_fail
+        
+        # Backward compatibility: map repair_on_fail to mode
+        if mode is None:
+            if repair_on_fail is not None:
+                # Legacy parameter provided
+                logger.warning(
+                    f"[{self.name}] repair_on_fail parameter is deprecated. "
+                    f"Use mode=ValidationMode.BEST_EFFORT or ValidationMode.STRICT instead."
+                )
+                self.mode = ValidationMode.BEST_EFFORT if repair_on_fail else ValidationMode.STRICT
+            else:
+                # Default to STRICT for new code
+                self.mode = ValidationMode.STRICT
+        else:
+            self.mode = mode
+            if repair_on_fail is not None:
+                logger.warning(
+                    f"[{self.name}] repair_on_fail parameter is ignored when mode is provided."
+                )
+        
+        self.llm = llm
+        self.max_retries = max_retries
+        
+        # Validate mode requirements
+        if self.mode == ValidationMode.RETRY and llm is None:
+            logger.warning(
+                f"[{self.name}] RETRY mode requires llm parameter. "
+                "Falling back to STRICT mode behavior."
+            )
+            self.mode = ValidationMode.STRICT
     
     async def execute(self, state: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Execute validation.
+        Execute validation based on configured mode.
         
-        Process:
-            1. Try to validate with Pydantic schema
-            2. If fails and repair_on_fail, attempt repairs
-            3. Apply custom semantic rules
-            4. Return validated data
+        Process (varies by mode):
+            STRICT:
+                1. Validate with Pydantic schema
+                2. Apply semantic rules
+                3. Raise on any failure
+        
+            RETRY:
+                1. Validate with Pydantic schema
+                2. If fails, re-prompt LLM with error details
+                3. Retry validation up to max_retries
+                4. Apply semantic rules
+        
+            BEST_EFFORT:
+                1. Validate with Pydantic schema
+                2. If fails, apply safe mechanical repairs
+                3. Use schema defaults for missing fields
+                4. Apply semantic rules
         
         Args:
             state: Must have "extracted" key
@@ -705,9 +804,10 @@ class ValidationNode(BaseNode):
             State with added keys:
                 - validated: Validated/repaired data dict
                 - validation_warnings: List of warnings/repairs applied
+                - validation_metadata: Dict with mode, outcome, repairs
         
         Raises:
-            NodeExecutionError: If validation fails and can't be repaired
+            NodeExecutionError: If validation fails (STRICT mode) or all retries exhausted (RETRY mode)
         """
         start_time = datetime.now()
         self.metrics.status = NodeStatus.RUNNING
@@ -721,56 +821,102 @@ class ValidationNode(BaseNode):
                     state=state
                 )
             
-            data = state["extracted"].copy()
+            # Store original data for audit trail
+            original_data = state["extracted"].copy()
+            data = original_data.copy()
             warnings = []
+            repairs = {}  # Track per-field repairs
+            validation_outcome = "strict_pass"
             
-            # If extracted data is just a status marker, create empty dict for repair
+            # Clean extraction artifacts
             if "extraction_status" in data and len(data) == 1:
-                warnings.append("Extraction returned only status marker, using defaults for all fields")
+                warnings.append("Extraction returned only status marker, using schema defaults")
                 data = {}
             
-            # Remove any undefined/null values and status markers
+            # Remove undefined/null values and status markers
             data = {k: v for k, v in data.items() 
                    if k != "extraction_status" and v is not None 
                    and not (hasattr(v, '__class__') and 'Undefined' in str(type(v)))}
             
-            # Layer 1: Pydantic validation with repair
+            # Layer 1: Pydantic validation with mode-specific repair
+            validated = None
+            validation_error = None
+            
             try:
                 validated = self.output_schema(**data)
-                logger.info(f"[{self.name}] Schema validation passed")
+                logger.info(f"[{self.name}] Schema validation passed (mode: {self.mode.value})")
             except ValidationError as e:
-                if self.repair_on_fail:
-                    warnings.append(f"Schema validation failed: {e.error_count()} errors")
-                    logger.info(f"[{self.name}] Attempting field repair (missing fields: {[err['loc'][0] for err in e.errors() if 'loc' in err]})")
-                    data = self._repair_fields(data, e)
-                    logger.info(f"[{self.name}] After repair, data keys: {list(data.keys())}")
+                validation_error = e
+                logger.info(f"[{self.name}] Schema validation failed: {e.error_count()} errors")
+                
+                # Mode-specific handling
+                if self.mode == ValidationMode.STRICT:
+                    # STRICT: Fail immediately
+                    raise NodeExecutionError(
+                        node_name=self.name,
+                        reason=f"Schema validation failed (STRICT mode): {self._format_validation_errors(e)}",
+                        state=state
+                    )
+                
+                elif self.mode == ValidationMode.RETRY:
+                    # RETRY: LLM repair loop
+                    if self.llm is None:
+                        raise NodeExecutionError(
+                            node_name=self.name,
+                            reason="RETRY mode requires llm parameter",
+                            state=state
+                        )
+                    
+                    validation_outcome = "retry_attempt"
+                    for attempt in range(self.max_retries):
+                        logger.info(f"[{self.name}] LLM repair attempt {attempt + 1}/{self.max_retries}")
+                        try:
+                            repaired_data = await self._repair_with_llm(data, e)
+                            validated = self.output_schema(**repaired_data)
+                            validation_outcome = f"repaired_after_{attempt + 1}_retries"
+                            warnings.append(f"Data repaired via LLM after {attempt + 1} attempt(s)")
+                            data = repaired_data
+                            logger.info(f"[{self.name}] Validation passed after LLM repair")
+                            break
+                        except ValidationError as e2:
+                            if attempt == self.max_retries - 1:
+                                # Last attempt failed
+                                raise NodeExecutionError(
+                                    node_name=self.name,
+                                    reason=f"Validation failed after {self.max_retries} LLM repair attempts: {self._format_validation_errors(e2)}",
+                                    state=state
+                                )
+                            e = e2  # Try again with new errors
+                
+                elif self.mode == ValidationMode.BEST_EFFORT:
+                    # BEST_EFFORT: Mechanical repairs only
+                    validation_outcome = "best_effort_repair"
+                    warnings.append(f"Schema validation failed: {e.error_count()} errors, attempting best-effort repair")
+                    logger.info(f"[{self.name}] Attempting best-effort repair")
+                    
+                    data, repairs = self._repair_fields_safe(data, e)
+                    logger.info(f"[{self.name}] After repair, data keys: {list(data.keys())}, repairs: {list(repairs.keys())}")
+                    
                     try:
                         validated = self.output_schema(**data)
+                        validation_outcome = "repaired_once"
                         warnings.append("Data repaired and revalidated successfully")
-                        logger.info(f"[{self.name}] Validation passed after repair")
+                        logger.info(f"[{self.name}] Validation passed after best-effort repair")
                     except ValidationError as e2:
-                        # Log what fields are still failing
-                        error_details = [(err.get('loc', ['unknown'])[0], err.get('type'), err.get('msg', '')) 
-                                        for err in e2.errors()]
-                        logger.error(f"[{self.name}] Validation errors after repair: {error_details}")
-                        # Try one more repair pass with more aggressive defaults
-                        data = self._repair_fields_aggressive(data, e2)
+                        # Try one more pass with schema defaults
+                        data, repairs2 = self._repair_fields_safe(data, e2, use_defaults=True)
+                        repairs.update(repairs2)
                         try:
                             validated = self.output_schema(**data)
+                            validation_outcome = "repaired_twice"
                             warnings.append("Data repaired on second pass")
                             logger.info(f"[{self.name}] Validation passed after second repair")
                         except ValidationError as e3:
                             raise NodeExecutionError(
                                 node_name=self.name,
-                                reason=f"Validation failed even after repair: {e3}",
+                                reason=f"Validation failed even after best-effort repair: {self._format_validation_errors(e3)}",
                                 state=state
                             )
-                else:
-                    raise NodeExecutionError(
-                        node_name=self.name,
-                        reason=f"Schema validation failed: {e}",
-                        state=state
-                    )
             
             validated_dict = validated.model_dump()
             
@@ -783,18 +929,27 @@ class ValidationNode(BaseNode):
                 except Exception as e:
                     warnings.append(f"Semantic rule '{rule_name}' raised: {e}")
             
-            # Store results
+            # Store results with metadata
             state["validated"] = validated_dict
             if warnings:
                 state["validation_warnings"] = warnings
                 self.metrics.warnings = warnings
             
+            # Add validation metadata (December 2025 best practice)
+            state["validation_metadata"] = {
+                "mode": self.mode.value,
+                "outcome": validation_outcome,
+                "repairs": repairs,
+                "original_keys": list(original_data.keys()),
+                "validated_keys": list(validated_dict.keys()),
+            }
+            
             # Update metrics
-            self.metrics.output_keys = ["validated"]
+            self.metrics.output_keys = ["validated", "validation_metadata"]
             self.metrics.status = NodeStatus.SUCCESS
             
             logger.info(
-                f"[{self.name}] Validation complete" + (
+                f"[{self.name}] Validation complete (mode: {self.mode.value}, outcome: {validation_outcome})" + (
                     f" with {len(warnings)} warnings" if warnings else ""
                 )
             )
@@ -813,182 +968,220 @@ class ValidationNode(BaseNode):
     def validate_input(self, state: Dict[str, Any]) -> bool:
         return "extracted" in state
     
-    def _repair_fields(self, data: Dict[str, Any], error: ValidationError) -> Dict[str, Any]:
+    def _format_validation_errors(self, error: ValidationError) -> str:
+        """Format Pydantic validation errors for human-readable messages."""
+        errors = []
+        for err in error.errors():
+            field = ".".join(str(loc) for loc in err.get("loc", ["unknown"]))
+            error_type = err.get("type", "unknown")
+            msg = err.get("msg", "")
+            errors.append(f"{field}: {error_type} - {msg}")
+        return "; ".join(errors)
+    
+    async def _repair_with_llm(
+        self, 
+        data: Dict[str, Any], 
+        validation_error: ValidationError
+    ) -> Dict[str, Any]:
         """
-        Attempt to repair individual fields that failed validation.
+        Repair data using LLM with validation error feedback (December 2025 pattern).
         
-        Repair strategies:
-        - Fill missing required fields with defaults
-        - Clamp out-of-bounds values
-        - Convert types when possible
-            - Clamp numeric values to bounds
-            - Remove invalid keys
-            - Fill missing required fields with defaults
+        This implements the "JSON plumber" / "re-prompt with errors" pattern used by:
+        - BentoML structured outputs
+        - Haystack OutputValidator
+        - Instructor retry loops
+        
+        Process:
+            1. Format validation errors as clear feedback
+            2. Construct repair prompt with original data and errors
+            3. Ask LLM to fix and return valid JSON
+            4. Parse and return repaired data
         """
+        # Format errors for LLM
+        error_summary = self._format_validation_errors(validation_error)
+        
+        # Get schema description
+        schema_name = self.output_schema.__name__
+        schema_json = self.output_schema.model_json_schema() if hasattr(self.output_schema, 'model_json_schema') else {}
+        
+        # Construct repair prompt
+        repair_prompt = (
+            f"You produced JSON data that failed validation against the {schema_name} schema.\n\n"
+            f"Original data:\n{json.dumps(data, indent=2)}\n\n"
+            f"Validation errors:\n{error_summary}\n\n"
+            f"Schema definition:\n{json.dumps(schema_json, indent=2)}\n\n"
+            f"Please fix the data to match the schema. Return ONLY valid JSON (no markdown, no explanation):"
+        )
+        
+        logger.info(f"[{self.name}] Invoking LLM for validation repair")
+        response = await self.llm.ainvoke([HumanMessage(content=repair_prompt)])
+        
+        # Parse repaired JSON
+        json_text = response.content.strip()
+        # Remove markdown code blocks if present
+        if json_text.startswith("```"):
+            json_text = re.sub(r'^```(?:json)?\n?', '', json_text)
+            json_text = re.sub(r'\n?```$', '', json_text)
+        
+        try:
+            repaired_data = json.loads(json_text)
+            return repaired_data
+        except json.JSONDecodeError as e:
+            logger.warning(f"[{self.name}] LLM repair returned invalid JSON: {e}")
+            # Fallback: try to extract JSON from response
+            json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', json_text, re.DOTALL)
+            if json_match:
+                try:
+                    return json.loads(json_match.group(0))
+                except:
+                    pass
+            raise NodeExecutionError(
+                node_name=self.name,
+                reason=f"LLM repair returned invalid JSON: {e}",
+                state={"data": data, "llm_response": json_text[:200]}
+            )
+    
+    def _repair_fields_safe(
+        self, 
+        data: Dict[str, Any], 
+        error: ValidationError,
+        use_defaults: bool = False
+    ) -> Tuple[Dict[str, Any], Dict[str, str]]:
+        """
+        Safe mechanical repair using Pydantic schema constraints (no domain heuristics).
+        
+        This method:
+        - Uses schema Field(ge=, le=, default=) constraints
+        - Applies safe type coercion
+        - Uses schema defaults
+        - Does NOT inject domain-specific values based on field names
+        
+        Returns:
+            Tuple of (repaired_data, repairs_dict) where repairs_dict maps field_name -> repair_reason
+        """
+        repairs = {}
+        
         # Get field info from schema
         if hasattr(self.output_schema, 'model_fields'):
             schema_fields = self.output_schema.model_fields
         elif hasattr(self.output_schema, '__fields__'):
             schema_fields = self.output_schema.__fields__
         else:
-            return data  # Can't repair without schema info
+            return data, repairs  # Can't repair without schema info
         
+        # Process each field
         for field_name, field_info in schema_fields.items():
-            # Check if field is missing, None, or PydanticUndefined
             field_value = data.get(field_name)
             is_undefined = (hasattr(field_value, '__class__') and 'Undefined' in str(type(field_value)))
-            is_missing = (field_name not in data or 
-                         field_value is None or 
-                         is_undefined)
+            is_missing = (field_name not in data or field_value is None or is_undefined)
             
-            # Also check if value is wrong type (will be caught by validation but we can fix proactively)
-            needs_type_fix = False
-            if field_name in data and not is_undefined:
-                field_type = None
-                if hasattr(field_info, 'annotation'):
-                    field_type = field_info.annotation
-                elif hasattr(field_info, 'type_'):
-                    field_type = field_info.type_
-                
-                if field_type == str and not isinstance(field_value, str):
-                    needs_type_fix = True
-                elif field_type == float and not isinstance(field_value, (int, float)):
-                    needs_type_fix = True
-                elif field_type == int and not isinstance(field_value, int):
-                    needs_type_fix = True
+            # Get field type and constraints from Pydantic
+            field_type = None
+            if hasattr(field_info, 'annotation'):
+                field_type = field_info.annotation
+            elif hasattr(field_info, 'type_'):
+                field_type = field_info.type_
             
-            if is_missing or needs_type_fix:
-                # Missing field - try default or provide sensible fallback
-                if field_info.default is not None:
-                    data[field_name] = field_info.default
-                elif field_info.default_factory is not None:
-                    data[field_name] = field_info.default_factory()
-                else:
-                    # No default in schema - provide sensible fallback based on field name/type
-                    # Get field type from annotation or type_ attribute
-                    field_type = None
-                    if hasattr(field_info, 'annotation'):
-                        field_type = field_info.annotation
-                    elif hasattr(field_info, 'type_'):
-                        field_type = field_info.type_
-                    
-                    # Provide defaults based on type and field name
-                    if field_type == str or (hasattr(field_type, '__origin__') and field_type.__origin__ is str):
-                        # String defaults based on field name
-                        if "severity" in field_name.lower() or "level" in field_name.lower():
-                            data[field_name] = "safe"  # Safe default for severity
-                        elif "category" in field_name.lower():
-                            data[field_name] = "none"  # Default category
+            # Get Pydantic Field constraints
+            field_constraints = {}
+            if hasattr(field_info, 'constraints'):
+                field_constraints = field_info.constraints
+            elif hasattr(field_info, 'field_info'):
+                fi = field_info.field_info
+                if hasattr(fi, 'ge'):
+                    field_constraints['ge'] = fi.ge
+                if hasattr(fi, 'le'):
+                    field_constraints['le'] = fi.le
+                if hasattr(fi, 'gt'):
+                    field_constraints['gt'] = fi.gt
+                if hasattr(fi, 'lt'):
+                    field_constraints['lt'] = fi.lt
+            
+            # Handle missing fields
+            if is_missing:
+                if use_defaults or field_info.default is not None:
+                    if field_info.default is not None:
+                        data[field_name] = field_info.default
+                        repairs[field_name] = "used_schema_default"
+                    elif hasattr(field_info, 'default_factory') and field_info.default_factory is not None:
+                        data[field_name] = field_info.default_factory()
+                        repairs[field_name] = "used_schema_default_factory"
+                    elif use_defaults:
+                        # Only provide type-based defaults if explicitly requested
+                        if field_type == str or (hasattr(field_type, '__origin__') and field_type.__origin__ is str):
+                            data[field_name] = ""
+                            repairs[field_name] = "defaulted_empty_string"
+                        elif field_type == float or (hasattr(field_type, '__origin__') and field_type.__origin__ is float):
+                            data[field_name] = 0.0
+                            repairs[field_name] = "defaulted_zero_float"
+                        elif field_type == int or (hasattr(field_type, '__origin__') and field_type.__origin__ is int):
+                            data[field_name] = 0
+                            repairs[field_name] = "defaulted_zero_int"
                         else:
-                            data[field_name] = ""  # Empty string default
-                    elif field_type == float or (hasattr(field_type, '__origin__') and field_type.__origin__ is float):
-                        if "confidence" in field_name.lower():
-                            data[field_name] = 0.5  # Medium confidence default
-                        else:
-                            data[field_name] = 0.0  # Zero default for floats
-                    elif field_type == int or (hasattr(field_type, '__origin__') and field_type.__origin__ is int):
-                        data[field_name] = 0  # Zero default for ints
-                    else:
-                        # Unknown type - try string default
-                        if "severity" in field_name.lower() or "level" in field_name.lower():
-                            data[field_name] = "safe"
-                        elif "category" in field_name.lower():
-                            data[field_name] = "none"
-                        elif "confidence" in field_name.lower():
-                            data[field_name] = 0.5
-                        else:
-                            data[field_name] = ""  # Last resort: empty string
-            else:
-                # Field exists - try to repair value/type
+                            data[field_name] = None
+                            repairs[field_name] = "defaulted_none"
+            
+            # Handle type mismatches (safe coercion only)
+            elif field_name in data and not is_undefined:
                 value = data[field_name]
-                
-                # Fix type mismatches first
-                field_type = None
-                if hasattr(field_info, 'annotation'):
-                    field_type = field_info.annotation
-                elif hasattr(field_info, 'type_'):
-                    field_type = field_info.type_
+                needs_type_fix = False
                 
                 if field_type == str and not isinstance(value, str):
-                    # Convert to string
-                    if "severity" in field_name.lower() or "level" in field_name.lower():
-                        data[field_name] = "safe"
-                    elif "category" in field_name.lower():
-                        data[field_name] = "none"
-                    else:
-                        data[field_name] = str(value) if value else ""
+                    needs_type_fix = True
                 elif field_type == float and not isinstance(value, (int, float)):
-                    # Convert to float
-                    try:
-                        data[field_name] = float(value) if value else 0.5
-                    except (ValueError, TypeError):
-                        data[field_name] = 0.5 if "confidence" in field_name.lower() else 0.0
+                    needs_type_fix = True
                 elif field_type == int and not isinstance(value, int):
-                    # Convert to int
-                    try:
-                        data[field_name] = int(value) if value else 0
-                    except (ValueError, TypeError):
-                        data[field_name] = 0
+                    needs_type_fix = True
                 
-                # Clamp numerics to valid ranges
-                value = data[field_name]  # Use potentially fixed value
-                if field_name.endswith("_months") and isinstance(value, (int, float)):
-                    data[field_name] = max(1, min(60, int(value)))
-                elif field_name.endswith("_score") and isinstance(value, (int, float)):
-                    data[field_name] = max(0.0, min(10.0, float(value)))
-                elif "confidence" in field_name.lower() and isinstance(value, (int, float)):
-                    data[field_name] = max(0.0, min(1.0, float(value)))
+                if needs_type_fix:
+                    try:
+                        if field_type == str:
+                            data[field_name] = str(value) if value is not None else ""
+                            repairs[field_name] = "coerced_to_string"
+                        elif field_type == float:
+                            data[field_name] = float(value)
+                            repairs[field_name] = "coerced_to_float"
+                        elif field_type == int:
+                            data[field_name] = int(float(value))  # Allow "3.0" -> 3
+                            repairs[field_name] = "coerced_to_int"
+                    except (ValueError, TypeError):
+                        # Can't coerce, will be caught by validation
+                        pass
+                
+                # Apply Pydantic constraints (clamp if out of bounds)
+                if field_name in data:
+                    value = data[field_name]
+                    if isinstance(value, (int, float)):
+                        if 'ge' in field_constraints and value < field_constraints['ge']:
+                            data[field_name] = field_constraints['ge']
+                            repairs[field_name] = f"clamped_to_min_{field_constraints['ge']}"
+                        elif 'gt' in field_constraints and value <= field_constraints['gt']:
+                            data[field_name] = field_constraints['gt'] + (0.01 if isinstance(value, float) else 1)
+                            repairs[field_name] = f"clamped_above_min_{field_constraints['gt']}"
+                        
+                        if 'le' in field_constraints and value > field_constraints['le']:
+                            data[field_name] = field_constraints['le']
+                            repairs[field_name] = f"clamped_to_max_{field_constraints['le']}"
+                        elif 'lt' in field_constraints and value >= field_constraints['lt']:
+                            data[field_name] = field_constraints['lt'] - (0.01 if isinstance(value, float) else 1)
+                            repairs[field_name] = f"clamped_below_max_{field_constraints['lt']}"
         
-        return data
+        return data, repairs
+    
+    def _repair_fields(self, data: Dict[str, Any], error: ValidationError) -> Dict[str, Any]:
+        """
+        DEPRECATED: Use _repair_fields_safe() instead.
+        
+        Kept for backward compatibility but delegates to safe repair.
+        """
+        repaired_data, _ = self._repair_fields_safe(data, error, use_defaults=True)
+        return repaired_data
     
     def _repair_fields_aggressive(self, data: Dict[str, Any], error: ValidationError) -> Dict[str, Any]:
         """
-        More aggressive repair that handles type mismatches and invalid values.
+        DEPRECATED: Use _repair_fields_safe() instead.
         
-        This is called when the first repair pass fails.
+        Kept for backward compatibility but delegates to safe repair with defaults.
         """
-        # Get schema fields
-        if hasattr(self.output_schema, 'model_fields'):
-            schema_fields = self.output_schema.model_fields
-        elif hasattr(self.output_schema, '__fields__'):
-            schema_fields = self.output_schema.__fields__
-        else:
-            return data
-        
-        # Get error details and fix each failing field
-        for err in error.errors():
-            if 'loc' in err and len(err['loc']) > 0:
-                field_name = err['loc'][0]
-                error_type = err.get('type', '')
-                
-                if field_name in schema_fields:
-                    field_info = schema_fields[field_name]
-                    field_type = None
-                    if hasattr(field_info, 'annotation'):
-                        field_type = field_info.annotation
-                    elif hasattr(field_info, 'type_'):
-                        field_type = field_info.type_
-                    
-                    # Force correct type based on error
-                    if error_type in ('string_type', 'type_error'):
-                        # Expected string but got something else (including PydanticUndefined)
-                        if "severity" in field_name.lower() or "level" in field_name.lower():
-                            data[field_name] = "safe"  # Valid enum value
-                        elif "category" in field_name.lower():
-                            data[field_name] = "none"
-                        else:
-                            data[field_name] = ""  # Empty string
-                    elif error_type in ('float_type', 'int_parsing', 'float_parsing'):
-                        # Expected number but got something else
-                        if "confidence" in field_name.lower():
-                            data[field_name] = 0.5  # Valid confidence
-                        else:
-                            data[field_name] = 0.0  # Default float
-                    elif error_type == 'value_error':
-                        # Invalid value (e.g., not in enum)
-                        if "severity" in field_name.lower() or "level" in field_name.lower():
-                            data[field_name] = "safe"  # Valid severity
-                        elif "confidence" in field_name.lower():
-                            data[field_name] = 0.5  # Valid confidence
-        
-        return data
+        repaired_data, _ = self._repair_fields_safe(data, error, use_defaults=True)
+        return repaired_data

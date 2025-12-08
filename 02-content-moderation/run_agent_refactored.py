@@ -19,7 +19,7 @@ import asyncio
 import json
 import sys
 from pathlib import Path
-from typing import TypedDict, Any, Dict
+from typing import TypedDict, Any, Dict, Literal
 from datetime import datetime
 
 from pydantic import BaseModel, Field
@@ -33,6 +33,7 @@ from shared.workflows.common_nodes import (
     IntelligenceNode,
     ExtractionNode,
     ValidationNode,
+    ValidationMode,
 )
 from shared.workflows.workflow import Workflow
 
@@ -51,15 +52,20 @@ class ModerationState(NodeState):
 
 
 class ModerationResult(BaseModel):
-    """Expected extraction output."""
-    severity_level: str = Field(
-        description="One of: safe, low, medium, high, critical"
+    """Expected extraction output (December 2025 pattern with Pydantic constraints)."""
+    severity_level: Literal["safe", "low", "medium", "high", "critical"] = Field(
+        default="safe",
+        description="Severity level: safe, low, medium, high, or critical"
     )
     risk_category: str = Field(
-        description="Main risk category detected (e.g., hate, violence, spam)"
+        default="none",
+        description="Main risk category detected (e.g., hate, violence, spam, none)"
     )
     confidence: float = Field(
-        description="Confidence score 0.0-1.0"
+        default=0.5,
+        ge=0.0,
+        le=1.0,
+        description="Confidence score between 0.0 and 1.0"
     )
 
 
@@ -115,25 +121,28 @@ class ContentModerationWorkflow(Workflow):
             description="Extract severity rating",
         )
         
-        # Validation rules
-        valid_severities = {"safe", "low", "medium", "high", "critical"}
+        # Validation rules (semantic checks beyond Pydantic schema)
+        def validate_severity_semantic(data: Dict[str, Any]) -> bool:
+            """Additional semantic check (Pydantic Literal already enforces enum)."""
+            severity = data.get("severity_level", "").lower()
+            return severity in {"safe", "low", "medium", "high", "critical"}
         
-        def validate_severity_in_set(data: Dict[str, Any]) -> bool:
-            return data.get("severity_level", "").lower() in valid_severities
-        
-        def validate_confidence_range(data: Dict[str, Any]) -> bool:
+        def validate_confidence_semantic(data: Dict[str, Any]) -> bool:
+            """Additional semantic check (Pydantic Field already enforces bounds)."""
             conf = data.get("confidence", 0.0)
             return 0.0 <= conf <= 1.0
         
+        # Use BEST_EFFORT mode for content moderation (allows repair for analytics)
+        # For production critical systems, use ValidationMode.STRICT instead
         validation = ValidationNode(
             output_schema=ModerationResult,
+            mode=ValidationMode.BEST_EFFORT,  # December 2025 pattern: explicit mode
             validation_rules={
-                "valid_severity": validate_severity_in_set,
-                "confidence_bounds": validate_confidence_range,
+                "severity_semantic": validate_severity_semantic,
+                "confidence_semantic": validate_confidence_semantic,
             },
-            repair_on_fail=True,
             name="validation",
-            description="Validate moderation result",
+            description="Validate moderation result with best-effort repair",
         )
         
         # Initialize parent Workflow
