@@ -43,13 +43,13 @@ async def main():
     result = await runtime.execute("research-001", input_data)
     
     # Display results
-    print(f"\n✅ Research Complete")
-    print(f"📝 Execution Path: {' → '.join(result['execution_path'])}")
+    print(f"\n[OK] Research Complete")
+    print(f"[PATH] Execution Path: {' -> '.join(result['execution_path'])}")
     
     # Try to find structured output
     if result.get("parsed_json"):
         summary_data = result["parsed_json"]
-        print(f"\n📋 Research Summary:")
+        print(f"\n[SUMMARY] Research Summary:")
         if isinstance(summary_data, dict):
             print(json.dumps(summary_data, indent=2))
         else:
@@ -61,14 +61,14 @@ async def main():
             if hasattr(msg, "content"):
                 content = str(msg.content)
                 if "Executive Summary" in content or "Summary" in content:
-                    print(f"\n📋 Research Summary:")
+                    print(f"\n[SUMMARY] Research Summary:")
                     print(content[:500])
                     if len(content) > 500:
                         print("   ... (truncated)")
                     break
         else:
             if result.get("last_content"):
-                print(f"\n📊 Output: {result['last_content'][:500]}...")
+                print(f"\n[OUTPUT] Output: {result['last_content'][:500]}...")
 
 
 if __name__ == "__main__":

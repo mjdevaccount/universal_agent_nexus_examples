@@ -41,12 +41,12 @@ async def main():
     # backend = fabric_meta["backend"]
     # print(f"Using {backend} backend for Cache Fabric")
     
-    # Use proper Nexus compiler pipeline: parse → optimize → execute
+    # Use proper Nexus compiler pipeline: parse -> optimize -> execute
     manifest_path = Path(__file__).parent / "manifest.yaml"
-    print("📦 Parsing manifest.yaml...")
+    print("[PARSE] Parsing manifest.yaml...")
     ir = parse(str(manifest_path))
     
-    print("⚡ Running optimization passes...")
+    print("[OPT] Running optimization passes...")
     manager = create_default_pass_manager(OptimizationLevel.DEFAULT)
     ir_optimized = manager.run(ir)
     
@@ -54,7 +54,7 @@ async def main():
     stats = manager.get_statistics()
     if stats:
         total_time = sum(s.elapsed_ms for s in stats.values())
-        print(f"✅ Applied {len(stats)} passes in {total_time:.2f}ms")
+        print(f"[OK] Applied {len(stats)} passes in {total_time:.2f}ms")
     
     # Optional: Store manifest contexts in Cache Fabric
     # await store_manifest_contexts(ir_optimized, fabric, manifest_id="<manifest-id>")
@@ -107,18 +107,18 @@ async def main():
         node_result = result.get(last_node, {})
         messages = node_result.get("messages", [])
     
-    print(f"\n✅ <Example Name> Complete")
-    print(f"📝 Execution Path: {' → '.join(executed_nodes)}")
+    print(f"\n[OK] <Example Name> Complete")
+    print(f"[PATH] Execution Path: {' -> '.join(executed_nodes)}")
     
     # Extract and display results
     if messages:
         # Get the result from the last message
         last_message = messages[-1]
         content = getattr(last_message, "content", "unknown")
-        print(f"💬 Result: {content}")
+        print(f"[MSG] Result: {content}")
     else:
         # Fallback: show raw result
-        print(f"✅ Result: {result}")
+        print(f"[OK] Result: {result}")
 
 
 if __name__ == "__main__":

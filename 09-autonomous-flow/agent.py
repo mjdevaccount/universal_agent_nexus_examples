@@ -201,7 +201,7 @@ def create_agent(task_type: str = "sync"):
 def run_sync_agent():
     """Run the sync agent to update chunks."""
     print("\n" + "=" * 60)
-    print("🔄 CODE SYNC AGENT")
+    print("[SYNC] CODE SYNC AGENT")
     print("=" * 60)
     
     agent, tools = create_agent("sync")
@@ -221,7 +221,7 @@ YOUR TASK:
 Use bulk_sync_all - it handles everything efficiently in one call.
 Start now."""
 
-    print(f"\n📤 Starting sync task...")
+    print(f"\n[START] Starting sync task...")
     
     step = 0
     max_steps = 10  # Should complete in ~3-4 steps now
@@ -239,26 +239,26 @@ Start now."""
             
             if hasattr(last, 'tool_calls') and last.tool_calls:
                 for tc in last.tool_calls:
-                    print(f"\n🔧 [{step}] Tool: {tc.get('name')}")
+                    print(f"\n[TOOL] [{step}] Tool: {tc.get('name')}")
                     args = tc.get('args', {})
                     if args and str(args) != "{}":
                         print(f"     Args: {json.dumps(args, default=str)[:100]}")
             elif hasattr(last, 'content') and last.content:
                 content = str(last.content)
                 if not content.startswith('{'):
-                    print(f"\n💬 [{step}] Agent: {content[:300]}...")
+                    print(f"\n[MSG] [{step}] Agent: {content[:300]}...")
         
         if step >= max_steps:
-            print(f"\n⏹️  Max steps reached ({max_steps})")
+            print(f"\n[STOP] Max steps reached ({max_steps})")
             break
     
-    print("\n✅ Sync complete!")
+    print("\n[OK] Sync complete!")
 
 
 def run_qa_agent(question: str):
     """Run the Q&A agent to answer questions about the code."""
     print("\n" + "=" * 60)
-    print("❓ CODE Q&A AGENT")
+    print("[Q&A] CODE Q&A AGENT")
     print("=" * 60)
     
     agent, tools = create_agent("query")
@@ -274,7 +274,7 @@ INSTRUCTIONS:
 
 Call analyze_full_stack now."""
 
-    print(f"\n📤 Task: {question}")
+    print(f"\n[TASK] Task: {question}")
     print("\n" + "-" * 40)
     
     step = 0
@@ -295,28 +295,28 @@ Call analyze_full_stack now."""
             
             if hasattr(last, 'tool_calls') and last.tool_calls:
                 for tc in last.tool_calls:
-                    print(f"🔧 [{step}] {tc.get('name')}: {str(tc.get('args', {}))[:60]}...")
+                    print(f"[TOOL] [{step}] {tc.get('name')}: {str(tc.get('args', {}))[:60]}...")
             elif msg_type == "ToolMessage":
                 content = str(last.content)[:200]
-                print(f"📥 [{step}] Tool result: {content}...")
+                print(f"[RESULT] [{step}] Tool result: {content}...")
             elif hasattr(last, 'content') and last.content:
                 content = str(last.content)
                 if not content.startswith('{') and len(content) > 100:
                     final_answer = content
-                    print(f"\n💬 [{step}] Response received ({len(content)} chars)")
+                    print(f"\n[MSG] [{step}] Response received ({len(content)} chars)")
         
         if step >= max_steps:
-            print(f"\n⏹️  Max steps reached")
+            print(f"\n[STOP] Max steps reached")
             break
     
     # Print final answer
     if final_answer:
         print("\n" + "=" * 60)
-        print("📋 FINAL ANSWER:")
+        print("[ANSWER] FINAL ANSWER:")
         print("=" * 60)
         print(final_answer)
     
-    print("\n✅ Research complete!")
+    print("\n[OK] Research complete!")
 
 
 def run_document_agent(topic: str, output_file: str = None):
@@ -327,7 +327,7 @@ def run_document_agent(topic: str, output_file: str = None):
     Each phase has clear completion criteria - no churning.
     """
     print("\n" + "=" * 60)
-    print("📝 DOCUMENT GENERATION AGENT")
+    print("[DOC] DOCUMENT GENERATION AGENT")
     print("=" * 60)
     print(f"   Topic: {topic}")
     print(f"   Output: {output_file or 'auto-generated'}")
@@ -376,7 +376,7 @@ RULES:
 
 Start with PHASE 1: call analyze_full_stack now."""
 
-    print("\n🚀 Starting document generation...")
+    print("\n[START] Starting document generation...")
     print("-" * 40)
     
     step = 0
@@ -425,18 +425,18 @@ Start with PHASE 1: call analyze_full_stack now."""
                     elif 'filename' in args:
                         arg_preview = f"({args['filename']})"
                     
-                    print(f"📌 [{current_phase}] {tool_name} {arg_preview}")
+                    print(f"[PHASE] [{current_phase}] {tool_name} {arg_preview}")
             
             elif isinstance(last, ToolMessage):
                 content = str(last.content)
                 # Show tool response (truncated)
-                print(f"📥 [{step}] Tool response: {content[:200]}...")
+                print(f"[RESULT] [{step}] Tool response: {content[:200]}...")
                 # Check for document saved message
                 if "document_saved" in content:
                     try:
                         result = json.loads(content)
                         if result.get("status") == "document_saved":
-                            print(f"\n✅ Document saved: {result.get('path')}")
+                            print(f"\n[OK] Document saved: {result.get('path')}")
                             print(f"   Sections: {result.get('sections_compiled')}")
                             print(f"   Size: {result.get('total_chars')} chars")
                             break
@@ -444,14 +444,14 @@ Start with PHASE 1: call analyze_full_stack now."""
                         pass
                 # Check for plan created
                 elif "plan_created" in content:
-                    print(f"   📋 Plan created successfully")
+                    print(f"   [PLAN] Plan created successfully")
                 # Check for section written
                 elif "section_written" in content or "all_sections_complete" in content:
                     try:
                         result = json.loads(content)
                         completed = result.get("completed", 0)
                         total = result.get("total", 0)
-                        print(f"   ✏️ Progress: {completed}/{total} sections")
+                        print(f"   [WRITE] Progress: {completed}/{total} sections")
                     except:
                         pass
             
@@ -459,24 +459,24 @@ Start with PHASE 1: call analyze_full_stack now."""
                 # Agent generated text response without tool calls - might be stopping
                 content = str(last.content)
                 if len(content) > 50:
-                    print(f"💬 [{step}] Agent text (no tools): {content[:200]}...")
+                    print(f"[MSG] [{step}] Agent text (no tools): {content[:200]}...")
         
         if step >= max_steps:
             logger.warning(f"Max steps reached ({max_steps}) - stopping to prevent infinite loop", extra={
                 "max_steps": max_steps,
                 "current_phase": current_phase
             })
-            print(f"\n⚠️ Max steps reached ({max_steps}) - stopping")
+            print(f"\n[WARN] Max steps reached ({max_steps}) - stopping")
             break
     
     print("\n" + "=" * 60)
-    print("📝 Document generation complete!")
+    print("[OK] Document generation complete!")
 
 
 def run_status_check():
     """Quick status check without full agent."""
     print("\n" + "=" * 60)
-    print("📊 STATUS CHECK")
+    print("[STATUS] STATUS CHECK")
     print("=" * 60)
     
     import httpx
@@ -486,10 +486,10 @@ def run_status_check():
         r = httpx.post(f"{MCP_SERVER}/tools/get_sync_status", json={}, timeout=10)
         status = json.loads(r.json().get("content", "{}"))
         
-        print("\n📦 Sync Status:")
+        print("\n[SYNC] Sync Status:")
         if "repos" in status:
             for repo in status["repos"]:
-                print(f"   • {repo['repo']}: {repo.get('files_synced', 0)} files, {repo.get('total_chunks', 0)} chunks")
+                print(f"   - {repo['repo']}: {repo.get('files_synced', 0)} files, {repo.get('total_chunks', 0)} chunks")
         else:
             print(f"   {status}")
         
@@ -497,13 +497,13 @@ def run_status_check():
         r = httpx.post(f"{MCP_SERVER}/tools/get_storage_stats", json={}, timeout=10)
         stats = json.loads(r.json().get("content", "{}"))
         
-        print(f"\n💾 Storage Stats:")
+        print(f"\n[STORE] Storage Stats:")
         print(f"   Repos tracked: {stats.get('repos_tracked', 0)}")
         print(f"   Total files: {stats.get('total_files', 0)}")
         print(f"   Total chunks: {stats.get('total_chunks', 0)}")
         
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"[ERROR] Error: {e}")
         print("   Make sure the MCP server is running: python tools/server.py")
 
 

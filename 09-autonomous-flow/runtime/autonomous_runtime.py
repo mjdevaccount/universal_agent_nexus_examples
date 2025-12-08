@@ -46,7 +46,7 @@ def create_runtime_from_manifest(manifest):
     This demonstrates how the compiler would generate the runtime.
     The agent can use tools autonomously to accomplish tasks.
     """
-    print("🔧 Creating runtime from regenerated manifest...")
+    print("[BUILD] Creating runtime from regenerated manifest...")
     
     # Extract tool configurations from manifest
     tool_configs = manifest.get('tools', [])
@@ -71,19 +71,19 @@ def create_runtime_from_manifest(manifest):
                     all_tools.append(tool)
                     seen_tools.add(tool.name)
     
-    print(f"   ✅ Loaded {len(all_tools)} unique tools from manifest")
-    print(f"   📋 Available tools: {', '.join([t.name for t in all_tools[:10]])}...")
+    print(f"   [OK] Loaded {len(all_tools)} unique tools from manifest")
+    print(f"   [TOOLS] Available tools: {', '.join([t.name for t in all_tools[:10]])}...")
     
     # Get LLM model from manifest
     router_config = manifest.get('routers', [{}])[0]
     model = router_config.get('model', 'qwen3')
     
     # Create LLM with tools - this enables autonomous tool calling
-    print(f"   ✅ Initializing Ollama LLM: {model}")
+    print(f"   [OK] Initializing Ollama LLM: {model}")
     llm, _ = create_llm_with_tools(all_tools, model=model)
     
     # Create agent graph - this supports autonomous tool selection and execution
-    print("   ✅ Building LangGraph agent with tool support...")
+    print("   [OK] Building LangGraph agent with tool support...")
     agent = create_agent_graph(all_tools, llm)
     
     return agent, all_tools
@@ -95,24 +95,24 @@ def main():
     if OBSERVABILITY_AVAILABLE:
         setup_observability("autonomous-flow")
     
-    print("🤖 AutonomousFlow Runtime")
+    print("[START] AutonomousFlow Runtime")
     print("=" * 60)
     
     # 1. Load regenerated manifest
     print("\n1. Loading regenerated manifest...")
     manifest = load_regenerated_manifest()
-    print(f"   ✅ Loaded manifest: {manifest['name']} v{manifest['version']}")
-    print(f"   ✅ Tools in manifest: {len(manifest.get('tools', []))}")
+    print(f"   [OK] Loaded manifest: {manifest['name']} v{manifest['version']}")
+    print(f"   [OK] Tools in manifest: {len(manifest.get('tools', []))}")
     
     # 2. Create runtime
     print("\n2. Creating runtime from manifest...")
     agent, tools = create_runtime_from_manifest(manifest)
-    print("   ✅ Runtime ready")
+    print("   [OK] Runtime ready")
     
     # 3. Execute with repository discovery task
     print("\n3. Executing agent with repository discovery task...")
-    print("   ⚠️  Note: Tool calling may require model support for function calling")
-    print("   💡 If tools aren't called, the model may need manual prompting")
+    print("   [WARN] Note: Tool calling may require model support for function calling")
+    print("   [TIP] If tools aren't called, the model may need manual prompting")
     
     task_prompt = """You are an autonomous agent with access to GitHub and Qdrant tools.
 
@@ -135,7 +135,7 @@ IMPORTANT: Only chunk actual .py Python files, not config files.
 
 Start now with Step 1."""
     
-    print(f"\n📤 Sending task to agent...")
+    print(f"\n[SEND] Sending task to agent...")
     
     # Stream to see progress in real-time
     messages = []
@@ -154,29 +154,29 @@ Start now with Step 1."""
         if messages:
             last = messages[-1]
             msg_type = type(last).__name__
-            print(f"\n📨 Step {step_count} ({msg_type}):")
+            print(f"\n[STEP] Step {step_count} ({msg_type}):")
             
             if hasattr(last, 'tool_calls') and last.tool_calls:
                 for tc in last.tool_calls:
-                    print(f"   🔧 Tool call: {tc.get('name')} - {tc.get('args', {})}")
+                    print(f"   [TOOL] Tool call: {tc.get('name')} - {tc.get('args', {})}")
             elif hasattr(last, 'content') and last.content:
                 content = str(last.content)[:300]
-                print(f"   📝 {content}")
+                print(f"   [MSG] {content}")
         
         # Stop after max steps for testing
         if step_count >= max_steps:
-            print(f"\n⏹️  Stopping after {max_steps} steps...")
+            print(f"\n[STOP] Stopping after {max_steps} steps...")
             break
         
         # Also stop if we got a successful chunk result
         if hasattr(last, 'content') and 'chunks_created' in str(last.content):
-            print(f"\n✅ Chunking complete! Stopping.")
+            print(f"\n[OK] Chunking complete! Stopping.")
             break
     
     result = {"messages": messages}
     
     # Debug: Check final state
-    print(f"\n🔍 Debug: Final state after {step_count} steps...")
+    print(f"\n[DEBUG] Final state after {step_count} steps...")
     for i, msg in enumerate(result['messages'], 1):
         msg_type = type(msg).__name__
         print(f"\n   Message {i} ({msg_type}):")
@@ -186,11 +186,11 @@ Start now with Step 1."""
             print(f"      tool_calls type: {type(msg.tool_calls)}")
             print(f"      tool_calls is None: {msg.tool_calls is None}")
             if msg.tool_calls:
-                print(f"      ✅ {len(msg.tool_calls)} tool calls found!")
+                print(f"      [OK] {len(msg.tool_calls)} tool calls found!")
                 for tc in msg.tool_calls:
                     print(f"         - {tc.get('name', 'unknown')}: {tc.get('args', {})}")
             else:
-                print(f"      ❌ tool_calls is empty/None")
+                print(f"      [EMPTY] tool_calls is empty/None")
         if hasattr(msg, 'invalid_tool_calls'):
             print(f"      invalid_tool_calls: {msg.invalid_tool_calls}")
         if hasattr(msg, 'content'):
@@ -208,7 +208,7 @@ Start now with Step 1."""
         if hasattr(message, 'tool_calls') and message.tool_calls:
             print(f"  Tool calls: {len(message.tool_calls)}")
     
-    print("\n✅ Execution complete!")
+    print("\n[OK] Execution complete!")
     return agent
 
 
@@ -216,7 +216,7 @@ if __name__ == "__main__":
     try:
         agent = main()
     except Exception as e:
-        print(f"\n❌ Error: {e}")
+        print(f"\n[ERROR] Error: {e}")
         import traceback
         traceback.print_exc()
 

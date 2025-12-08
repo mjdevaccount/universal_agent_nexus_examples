@@ -40,42 +40,42 @@ async def main():
     backend = fabric_meta["backend"]
 
     if backend == "redis":
-        print(f"🔴 Using Redis backend: {fabric_meta['redis_url']}")
+        print(f"[REDIS] Using Redis backend: {fabric_meta['redis_url']}")
     elif backend == "vector":
-        print(f"🔍 Using Vector backend: {fabric_meta['vector_url']}")
+        print(f"[VECTOR] Using Vector backend: {fabric_meta['vector_url']}")
     else:
-        print("💾 Using In-Memory backend (development)")
+        print("[MEMORY] Using In-Memory backend (development)")
     
     # === PHASE 1: NEXUS COMPILER INTEGRATION ===
     print("\n" + "="*60)
-    print("📦 PHASE 1: Nexus Compiler → Cache Fabric")
+    print("[PHASE 1] Nexus Compiler -> Cache Fabric")
     print("="*60)
     
-    print("\n📦 Parsing manifest.yaml...")
+    print("\n[PARSE] Parsing manifest.yaml...")
     ir = parse("manifest.yaml")
     
-    print("⚡ Running optimization passes...")
+    print("[OPT] Running optimization passes...")
     manager = create_default_pass_manager(OptimizationLevel.DEFAULT)
     ir_optimized = manager.run(ir)
     
     stats = manager.get_statistics()
     if stats:
         total_time = sum(s.elapsed_ms for s in stats.values())
-        print(f"✅ Applied {len(stats)} passes in {total_time:.2f}ms")
+        print(f"[OK] Applied {len(stats)} passes in {total_time:.2f}ms")
     
     # Store system prompts in fabric (Nexus integration)
-    print("\n💾 Storing system prompts in Cache Fabric...")
+    print("\n[STORE] Storing system prompts in Cache Fabric...")
     await store_manifest_contexts(ir_optimized, fabric, graph_name="moderate_content")
     
     # Show what was stored
     router_entry = await fabric.get_context("router:risk_router:system_prompt")
     if router_entry:
-        print(f"✅ Stored router:risk_router:system_prompt (v{router_entry.version})")
+        print(f"[OK] Stored router:risk_router:system_prompt (v{router_entry.version})")
         print(f"   Preview: {router_entry.value[:100]}...")
     
     # === PHASE 2: AGENT RUNTIME INTEGRATION ===
     print("\n" + "="*60)
-    print("🚀 PHASE 2: Agent Runtime → Cache Fabric")
+    print("[PHASE 2] Agent Runtime -> Cache Fabric")
     print("="*60)
     
     runtime = LangGraphRuntime(
@@ -86,7 +86,7 @@ async def main():
     
     # === PHASE 3: EXECUTION WITH FABRIC TRACKING ===
     print("\n" + "="*60)
-    print("⚡ PHASE 3: Execution with Fabric Tracking")
+    print("[PHASE 3] Execution with Fabric Tracking")
     print("="*60)
     
     test_cases = [
@@ -182,7 +182,7 @@ async def main():
             # But for now, we'll use the router's logged output from INFO logs
         
         if decision:
-            print(f"✅ Decision: {decision.upper()}")
+            print(f"[OK] Decision: {decision.upper()}")
             
             # Record feedback
             await record_feedback_to_fabric(
@@ -198,7 +198,7 @@ async def main():
         else:
             # Show execution path instead
             executed_nodes = [k for k in result.keys() if k != "messages"]
-            print(f"✅ Execution Path: {' → '.join(executed_nodes)}")
+            print(f"[OK] Execution Path: {' -> '.join(executed_nodes)}")
             print(f"   (Decision inferred from execution path)")
             
             # Record feedback with inferred decision
@@ -225,31 +225,31 @@ async def main():
     
     # === PHASE 4: METRICS ===
     print("\n" + "="*60)
-    print("📊 PHASE 4: Cache Fabric Metrics")
+    print("[PHASE 4] Cache Fabric Metrics")
     print("="*60)
     
     metrics = await fabric.get_metrics()
-    print(f"\n📈 Metrics:")
+    print(f"\n[METRICS] Metrics:")
     for key, value in metrics.items():
         if key != "stats":
             print(f"   {key}: {value}")
     
     if "stats" in metrics:
-        print(f"\n📊 Detailed Stats:")
+        print(f"\n[STATS] Detailed Stats:")
         for key, value in metrics["stats"].items():
             print(f"   {key}: {value}")
     
     # Show stored contexts
-    print(f"\n💾 Stored Contexts:")
+    print(f"\n[STORE] Stored Contexts:")
     router_entry = await fabric.get_context("router:risk_router:system_prompt")
     if router_entry:
-        print(f"   ✅ router:risk_router:system_prompt (v{router_entry.version})")
+        print(f"   [OK] router:risk_router:system_prompt (v{router_entry.version})")
     
     graph_entry = await fabric.get_context("graph:moderate_content:metadata")
     if graph_entry:
-        print(f"   ✅ graph:moderate_content:metadata")
+        print(f"   [OK] graph:moderate_content:metadata")
     
-    print(f"\n✅ Cache Fabric Demo Complete!")
+    print(f"\n[OK] Cache Fabric Demo Complete!")
     print(f"   Backend: {metrics.get('backend', 'unknown')}")
     print(f"   Total executions tracked: {len(test_cases)}")
 

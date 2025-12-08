@@ -32,7 +32,7 @@ async def main():
     
     for query in test_queries:
         print(f"\n{'='*60}")
-        print(f"📝 Query: {query}")
+        print(f"[QUERY] Query: {query}")
         print(f"{'='*60}")
         
         # Execute
@@ -42,11 +42,11 @@ async def main():
         )
         
         # Display results
-        print(f"📍 Execution Path: {' → '.join(result['execution_path'])}")
+        print(f"[PATH] Execution Path: {' -> '.join(result['execution_path'])}")
         
         routing_decision = result.get("decision")
         if routing_decision:
-            print(f"🎯 Routed to: {routing_decision.upper().replace('_', ' ')}")
+            print(f"[ROUTE] Routed to: {routing_decision.upper().replace('_', ' ')}")
         
         # Find formatted response (longer message, not routing decision)
         messages = result.get("messages", [])
@@ -70,7 +70,7 @@ async def main():
             lines = cleaned.split('\n')
             cleaned = '\n'.join([l for l in lines if not l.strip().startswith('_')])
             
-            print(f"\n💬 Formatted Response:")
+            print(f"\n[RESPONSE] Formatted Response:")
             response_lines = cleaned.split('\n')[:10]
             for line in response_lines:
                 if line.strip():
@@ -79,7 +79,7 @@ async def main():
                 remaining = len(cleaned.split('\n')) - 10
                 print(f"   ... ({remaining} more lines)")
         elif result.get("last_content"):
-            print(f"📊 Output: {result['last_content'][:300]}...")
+            print(f"[OUTPUT] Output: {result['last_content'][:300]}...")
 
 
 if __name__ == "__main__":

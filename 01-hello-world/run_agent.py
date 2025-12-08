@@ -20,10 +20,10 @@ async def main():
     
     # Use proper Nexus compiler pipeline: parse → optimize → execute
     manifest_path = Path(__file__).parent / "manifest.yaml"
-    print("📦 Parsing manifest.yaml...")
+    print("[PARSE] Parsing manifest.yaml...")
     ir = parse(str(manifest_path))
     
-    print("⚡ Running optimization passes...")
+    print("[OPT] Running optimization passes...")
     manager = create_default_pass_manager(OptimizationLevel.DEFAULT)
     ir_optimized = manager.run(ir)
     
@@ -31,7 +31,7 @@ async def main():
     stats = manager.get_statistics()
     if stats:
         total_time = sum(s.elapsed_ms for s in stats.values())
-        print(f"✅ Applied {len(stats)} passes in {total_time:.2f}ms")
+        print(f"[OK] Applied {len(stats)} passes in {total_time:.2f}ms")
     
     runtime = LangGraphRuntime(
         postgres_url=None,
@@ -73,18 +73,18 @@ async def main():
         node_result = result.get(last_node, {})
         messages = node_result.get("messages", [])
     
-    print(f"\n✅ Hello World Complete")
-    print(f"📝 Execution Path: {' → '.join(executed_nodes)}")
+    print(f"\n[OK] Hello World Complete")
+    print(f"[PATH] Execution Path: {' -> '.join(executed_nodes)}")
     
     if messages:
         # Get the greeting from the last message
         last_message = messages[-1]
         greeting = getattr(last_message, "content", "unknown")
-        print(f"💬 Greeting: {greeting}")
+        print(f"[MSG] Greeting: {greeting}")
     else:
         # Fallback: check for greeting in result
         greeting = result.get("greeting", result)
-        print(f"💬 Greeting: {greeting}")
+        print(f"[MSG] Greeting: {greeting}")
 
 
 if __name__ == "__main__":

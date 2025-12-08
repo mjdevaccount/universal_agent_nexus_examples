@@ -64,7 +64,7 @@ async def main() -> None:
                 },
             )
 
-        print("\n✅ Research Complete")
+        print("\n[OK] Research Complete")
         print(f"Output: {result['context']['last_response']}")
     finally:
         for process in servers:

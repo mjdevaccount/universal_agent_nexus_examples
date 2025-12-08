@@ -31,7 +31,7 @@ async def main():
     
     for query in test_queries:
         print(f"\n{'='*60}")
-        print(f"📝 Query: {query}")
+        print(f"[QUERY] Query: {query}")
         print(f"{'='*60}")
         
         # Execute
@@ -41,11 +41,11 @@ async def main():
         )
         
         # Display results
-        print(f"📍 Execution Path: {' → '.join(result['execution_path'])}")
+        print(f"[PATH] Execution Path: {' -> '.join(result['execution_path'])}")
         
         routing_decision = result.get("decision")
         if routing_decision:
-            print(f"🎯 Routed to: {routing_decision.upper()}")
+            print(f"[ROUTE] Routed to: {routing_decision.upper()}")
         
         # Find formatted response
         messages = result.get("messages", [])
@@ -58,7 +58,7 @@ async def main():
                     break
         
         if final_response:
-            print(f"\n💬 Customer Response:")
+            print(f"\n[RESPONSE] Customer Response:")
             response_lines = final_response.split('\n')[:10]
             for line in response_lines:
                 if line.strip():
@@ -67,7 +67,7 @@ async def main():
                 remaining = len(final_response.split('\n')) - 10
                 print(f"   ... ({remaining} more lines)")
         elif result.get("last_content"):
-            print(f"📊 Output: {result['last_content'][:300]}...")
+            print(f"[OUTPUT] Output: {result['last_content'][:300]}...")
 
 
 if __name__ == "__main__":

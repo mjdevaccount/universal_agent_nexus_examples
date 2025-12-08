@@ -53,23 +53,23 @@ Extract and enrich this record with sentiment, entities, and category."""
     result = await runtime.execute("pipeline-001", input_data)
     
     # Display results
-    print(f"\n✅ Pipeline Complete")
-    print(f"📝 Execution Path: {' → '.join(result['execution_path'])}")
+    print(f"\n[OK] Pipeline Complete")
+    print(f"[PATH] Execution Path: {' -> '.join(result['execution_path'])}")
     
     if result.get("parsed_json"):
         enriched_data = result["parsed_json"]
-        print(f"\n📋 Enriched Data:")
+        print(f"\n[DATA] Enriched Data:")
         print(json.dumps(enriched_data, indent=2))
-        print(f"\n📊 Summary:")
-        print(f"  ✅ Sentiment: {enriched_data.get('sentiment', 'unknown').upper()}")
-        print(f"  ✅ Category: {enriched_data.get('category', 'unknown').upper()}")
+        print(f"\n[SUMMARY]:")
+        print(f"  [OK] Sentiment: {enriched_data.get('sentiment', 'unknown').upper()}")
+        print(f"  [OK] Category: {enriched_data.get('category', 'unknown').upper()}")
         entities = enriched_data.get('entities', [])
         if entities:
-            print(f"  ✅ Entities: {', '.join(entities)}")
+            print(f"  [OK] Entities: {', '.join(entities)}")
         confidence = enriched_data.get('confidence', 0)
-        print(f"  ✅ Confidence: {confidence:.1%}")
+        print(f"  [OK] Confidence: {confidence:.1%}")
     elif result.get("last_content"):
-        print(f"\n📊 Output: {result['last_content'][:400]}...")
+        print(f"\n[OUTPUT] Output: {result['last_content'][:400]}...")
 
 
 if __name__ == "__main__":

@@ -194,7 +194,7 @@ def main():
     if OBSERVABILITY_AVAILABLE:
         setup_observability("local-agent-runtime")
     
-    print("🚀 Local Agent Runtime - December 2025 Stack")
+    print("[START] Local Agent Runtime - December 2025 Stack")
     print("=" * 60)
     
     # 1. Load tools from MCP servers (auto-discovery)
@@ -203,19 +203,19 @@ def main():
     git_tools = MCPToolLoader.load_from_server("http://localhost:8001/mcp")
     all_tools = filesystem_tools + git_tools
     
-    print(f"   ✅ Loaded {len(all_tools)} tools:")
+    print(f"   [OK] Loaded {len(all_tools)} tools:")
     for tool in all_tools:
         print(f"      - {tool.name}: {tool.description}")
     
     # 2. Create LLM with tools (Ollama function calling)
     print("\n2. Initializing Ollama LLM with function calling...")
     llm, _ = create_llm_with_tools(all_tools, model="llama3.2:11b")
-    print("   ✅ LLM ready with tool binding")
+    print("   [OK] LLM ready with tool binding")
     
     # 3. Create LangGraph agent
     print("\n3. Building LangGraph agent...")
     agent = create_agent_graph(all_tools, llm)
-    print("   ✅ Agent graph compiled")
+    print("   [OK] Agent graph compiled")
     
     # 4. Run agent
     print("\n4. Running agent...")
@@ -228,7 +228,7 @@ def main():
         ]
     })
     
-    print("\n✅ Agent execution complete!")
+    print("\n[OK] Agent execution complete!")
     print(f"   Messages: {len(result['messages'])}")
     
     return agent

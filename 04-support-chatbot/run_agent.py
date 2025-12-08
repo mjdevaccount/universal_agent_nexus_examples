@@ -43,7 +43,7 @@ async def main():
     # Find intent (should be in early messages)
     intent = result.get("decision")
     if intent and intent.lower() in ["faq", "technical", "billing", "complaint", "other"]:
-        print(f"\n🎯 Classified Intent: {intent.upper()}")
+        print(f"\n[INTENT] Classified Intent: {intent.upper()}")
     
     # Find final response (longer message, not intent keywords)
     final_response = None
@@ -56,13 +56,13 @@ async def main():
                     break
     
     if final_response:
-        print(f"\n💬 Bot Response:")
+        print(f"\n[RESPONSE] Bot Response:")
         print(f"   {final_response}")
     elif result.get("last_content"):
-        print(f"\n💬 Bot Response:")
+        print(f"\n[RESPONSE] Bot Response:")
         print(f"   {result['last_content']}")
     
-    print(f"\n📝 Execution Path: {' → '.join(result['execution_path'])}")
+    print(f"\n[PATH] Execution Path: {' -> '.join(result['execution_path'])}")
 
 
 if __name__ == "__main__":

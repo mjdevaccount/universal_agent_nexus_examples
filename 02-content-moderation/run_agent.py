@@ -19,10 +19,10 @@ async def main():
     obs_enabled = setup_observability("content-moderation")
     
     # Use proper Nexus compiler pipeline: parse → optimize → execute
-    print("📦 Parsing manifest.yaml...")
+    print("[PARSE] Parsing manifest.yaml...")
     ir = parse("manifest.yaml")
     
-    print("⚡ Running optimization passes...")
+    print("[OPT] Running optimization passes...")
     manager = create_default_pass_manager(OptimizationLevel.DEFAULT)
     ir_optimized = manager.run(ir)
     
@@ -30,7 +30,7 @@ async def main():
     stats = manager.get_statistics()
     if stats:
         total_time = sum(s.elapsed_ms for s in stats.values())
-        print(f"✅ Applied {len(stats)} passes in {total_time:.2f}ms")
+        print(f"[OK] Applied {len(stats)} passes in {total_time:.2f}ms")
     
     runtime = LangGraphRuntime(
         postgres_url=None,
@@ -73,11 +73,11 @@ async def main():
     if messages:
         last_message = messages[-1]
         decision = getattr(last_message, "content", "unknown")
-        print(f"\n✅ Moderation Complete")
-        print(f"📊 Final Decision: {decision}")
-        print(f"📝 Execution Path: {list(result.keys())}")
+        print(f"\n[OK] Moderation Complete")
+        print(f"[DATA] Final Decision: {decision}")
+        print(f"[PATH] Execution Path: {list(result.keys())}")
     else:
-        print(f"✅ Result: {result}")
+        print(f"[OK] Result: {result}")
 
 
 if __name__ == "__main__":
