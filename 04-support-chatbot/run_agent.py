@@ -243,7 +243,7 @@ async def main():
         model="qwen3:8b",
         base_url="http://localhost:11434",
         temperature=0.7,
-        num_predict=300,
+        # num_predict removed - using model default prevents empty responses
     )
     
     # Create workflow
@@ -270,7 +270,7 @@ async def main():
             print(f"[{i}] Error: {e}\n")
     
     print("="*70)
-    print("✅ All support requests handled successfully")
+    print("[OK] All support requests handled successfully")
     print("="*70 + "\n")
 
 
