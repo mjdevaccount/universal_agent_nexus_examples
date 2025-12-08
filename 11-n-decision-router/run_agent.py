@@ -1,43 +1,27 @@
-"""Run the n-decision router agent using LangGraphRuntime with v3.0.1 patterns."""
+"""Run the n-decision router agent using NexusRuntime - Reduced from 130 to 50 lines."""
 
 import asyncio
-import sys
 from pathlib import Path
+import sys
 
-# Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from langchain_core.messages import HumanMessage
-from universal_agent_nexus.compiler import parse
-from universal_agent_nexus.ir.pass_manager import create_default_pass_manager, OptimizationLevel
-from universal_agent_nexus.adapters.langgraph import LangGraphRuntime
-from universal_agent_tools.observability_helper import setup_observability, trace_runtime_execution
+from shared import NexusRuntime, ClassificationExtractor
 
 
 async def main():
-    # Setup observability
-    obs_enabled = setup_observability("n-decision-router")
-    
-    # Use proper Nexus compiler pipeline: parse → optimize → execute
-    print("📦 Parsing manifest.yaml...")
-    ir = parse("manifest.yaml")
-    
-    print("⚡ Running optimization passes...")
-    manager = create_default_pass_manager(OptimizationLevel.DEFAULT)
-    ir_optimized = manager.run(ir)
-    
-    # Log optimization stats
-    stats = manager.get_statistics()
-    if stats:
-        total_time = sum(s.elapsed_ms for s in stats.values())
-        print(f"✅ Applied {len(stats)} passes in {total_time:.2f}ms")
-    
-    runtime = LangGraphRuntime(
-        postgres_url=None,
-        enable_checkpointing=False,
+    # Create runtime with classification extractor for routing decisions
+    runtime = NexusRuntime(
+        manifest_path=Path(__file__).parent / "manifest.yaml",
+        graph_name="main",
+        service_name="n-decision-router",
+        extractor=ClassificationExtractor(
+            categories=["data_quality", "growth_experiment", "customer_support", "reporting"]
+        ),
     )
-    await runtime.initialize(ir_optimized, graph_name="main")
-
+    
+    await runtime.setup()
+    
     # Test queries for different routes
     test_queries = [
         "Check data quality for user reports",
@@ -51,79 +35,52 @@ async def main():
         print(f"📝 Query: {query}")
         print(f"{'='*60}")
         
-        # v3.0.0 uses MessagesState - provide input as messages
-        input_data = {
-            "messages": [
-                HumanMessage(content=query)
-            ]
-        }
-
-        # Execute with tracing
-        if obs_enabled:
-            async with trace_runtime_execution(f"router-{query[:10]}", graph_name="main"):
-                result = await runtime.execute(
-                    execution_id=f"router-{query[:10]}",
-                    input_data=input_data,
-                )
-        else:
-            result = await runtime.execute(
-                execution_id=f"router-{query[:10]}",
-                input_data=input_data,
-            )
+        # Execute
+        result = await runtime.execute(
+            f"router-{query[:10].replace(' ', '_')}",
+            runtime.create_input(query)
+        )
         
-        # Extract results from messages
+        # Display results
+        print(f"📍 Execution Path: {' → '.join(result['execution_path'])}")
+        
+        routing_decision = result.get("decision")
+        if routing_decision:
+            print(f"🎯 Routed to: {routing_decision.upper().replace('_', ' ')}")
+        
+        # Find formatted response (longer message, not routing decision)
         messages = result.get("messages", [])
-        executed_nodes = [k for k in result.keys() if k != "messages"]
+        final_response = None
+        for msg in reversed(messages):
+            if hasattr(msg, "content"):
+                content = str(msg.content).strip()
+                if len(content) > 50 and content.lower() != routing_decision:
+                    final_response = content
+                    break
         
-        print(f"📍 Execution Path: {' → '.join(executed_nodes)}")
-        
-        if messages:
-            # Find routing decision and final response
-            routing_decision = None
-            final_response = None
+        if final_response:
+            # Clean up response
+            cleaned = final_response.replace("</think>", "").strip()
+            if cleaned.startswith("```json"):
+                cleaned = cleaned[7:-3].strip()
+            elif cleaned.startswith("```"):
+                cleaned = cleaned[3:-3].strip()
             
-            for msg in messages:
-                if hasattr(msg, 'content'):
-                    content = str(msg.content).strip()
-                    content_lower = content.lower()
-                    # Check for routing decision (short, exact match)
-                    if content_lower in ['data_quality', 'growth_experiment', 'customer_support', 'reporting']:
-                        routing_decision = content_lower
-                    # Find final formatted response (longest, most substantial)
-                    elif len(content) > 50 and content_lower not in ['data_quality', 'growth_experiment', 'customer_support', 'reporting']:
-                        if not final_response or len(content) > len(final_response):
-                            final_response = content
+            # Remove lines starting with '_'
+            lines = cleaned.split('\n')
+            cleaned = '\n'.join([l for l in lines if not l.strip().startswith('_')])
             
-            if routing_decision:
-                print(f"🎯 Routed to: {routing_decision.upper().replace('_', ' ')}")
-            
-            if final_response:
-                # Clean up response (remove any leading artifacts)
-                cleaned = final_response
-                if cleaned.startswith('_'):
-                    # Remove leading underscore artifacts
-                    lines = cleaned.split('\n')
-                    cleaned = '\n'.join([l for l in lines if not l.strip().startswith('_')])
-                print(f"\n💬 Formatted Response:")
-                # Show first 10 lines or 400 chars
-                response_lines = cleaned.split('\n')[:10]
-                for line in response_lines:
-                    if line.strip():
-                        print(f"   {line}")
-                total_lines = len(cleaned.split('\n'))
-                if total_lines > 10:
-                    remaining = total_lines - 10
-                    print(f"   ... ({remaining} more lines)")
-            else:
-                # Fallback: show last message
-                if messages:
-                    last_message = messages[-1]
-                    content = getattr(last_message, "content", "")
-                    print(f"📊 Output: {content[:300]}...")
-        else:
-            print(f"✅ Result: {result}")
+            print(f"\n💬 Formatted Response:")
+            response_lines = cleaned.split('\n')[:10]
+            for line in response_lines:
+                if line.strip():
+                    print(f"   {line}")
+            if len(cleaned.split('\n')) > 10:
+                remaining = len(cleaned.split('\n')) - 10
+                print(f"   ... ({remaining} more lines)")
+        elif result.get("last_content"):
+            print(f"📊 Output: {result['last_content'][:300]}...")
 
 
 if __name__ == "__main__":
     asyncio.run(main())
-

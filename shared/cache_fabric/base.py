@@ -12,6 +12,7 @@ class ContextScope(Enum):
     GLOBAL = "global"  # Shared across all executions
     EXECUTION = "execution"  # Per-execution context
     TENANT = "tenant"  # Per-tenant context
+    FEEDBACK = "feedback"  # Feedback data for executions
 
 
 @dataclass
