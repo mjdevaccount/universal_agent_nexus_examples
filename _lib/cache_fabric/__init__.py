@@ -1,4 +1,8 @@
-"""Cache Fabric Layer - Communication between Nexus and Agent runtime."""
+"""
+Cache Fabric Layer
+
+Promotion target: universal-agent-nexus
+"""
 
 from .base import CacheFabric, ContextScope, ContextEntry
 from .backends import InMemoryFabric, RedisFabric, VectorFabric
@@ -15,4 +19,3 @@ __all__ = [
     "create_cache_fabric",
     "resolve_fabric_from_env",
 ]
-

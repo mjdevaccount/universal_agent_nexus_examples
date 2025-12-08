@@ -26,7 +26,7 @@ from langchain_core.messages import HumanMessage
 # Try to import observability helper
 try:
     sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-    from universal_agent_tools.observability_helper import setup_observability
+    from _lib.tools.universal_agent_tools.observability_helper import setup_observability
     OBSERVABILITY_AVAILABLE = True
 except ImportError:
     OBSERVABILITY_AVAILABLE = False

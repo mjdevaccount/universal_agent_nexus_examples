@@ -25,7 +25,7 @@ from universal_agent_nexus.adapters.langgraph import LangGraphRuntime
 from shared.cache_fabric import ContextScope, resolve_fabric_from_env
 from shared.cache_fabric.nexus_integration import store_manifest_contexts, get_router_prompt_from_fabric
 from shared.cache_fabric.runtime_integration import track_execution_with_fabric, record_feedback_to_fabric
-from universal_agent_tools.observability_helper import setup_observability, trace_runtime_execution
+from _lib.tools.universal_agent_tools.observability_helper import setup_observability, trace_runtime_execution
 
 
 async def main():

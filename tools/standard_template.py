@@ -24,7 +24,7 @@ from langchain_core.messages import HumanMessage
 from universal_agent_nexus.compiler import parse
 from universal_agent_nexus.ir.pass_manager import create_default_pass_manager, OptimizationLevel
 from universal_agent_nexus.adapters.langgraph import LangGraphRuntime
-from universal_agent_tools.observability_helper import setup_observability, trace_runtime_execution
+from _lib.tools.universal_agent_tools.observability_helper import setup_observability, trace_runtime_execution
 
 # Optional: Cache Fabric integration
 # from shared.cache_fabric import resolve_fabric_from_env

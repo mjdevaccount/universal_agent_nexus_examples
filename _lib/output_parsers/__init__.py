@@ -1,8 +1,7 @@
 """
-Output Parsers Module
+Output Parsers
 
-Provides structured output parsing for agent responses.
-Types: Classification, Sentiment, Extraction, Boolean, Pydantic, Regex
+Promotion target: universal-agent-nexus
 """
 
 from .base import OutputParser, ParserResult

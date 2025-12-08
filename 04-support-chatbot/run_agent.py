@@ -6,7 +6,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from shared import NexusRuntime, ClassificationExtractor
+from _lib.runtime import NexusRuntime, ClassificationExtractor
 
 
 async def main():

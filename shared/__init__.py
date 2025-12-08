@@ -1,85 +1,44 @@
-"""Shared utilities for Universal Agent Nexus examples."""
+"""
+⚠️ DEPRECATED: This module has been moved to _lib/
 
-from .cache_fabric import (
-    CacheFabric,
-    ContextScope,
-    ContextEntry,
-    InMemoryFabric,
-    RedisFabric,
-    VectorFabric,
-    create_cache_fabric,
-)
+For backward compatibility, imports are redirected to _lib.
+Please update your imports to use _lib directly.
 
-# Integration helpers
-from .cache_fabric.nexus_integration import (
-    store_manifest_contexts,
-    get_router_prompt_from_fabric,
-)
+Old: from shared import NexusRuntime
+New: from _lib.runtime import NexusRuntime
+"""
 
-from .cache_fabric.runtime_integration import (
-    FabricAwareRuntime,
-    track_execution_with_fabric,
-    record_feedback_to_fabric,
-)
+import sys
+from pathlib import Path
 
-# Runtime base classes
-from .runtime_base import (
-    NexusRuntime,
-    ResultExtractor,
-    MessagesStateExtractor,
-    ClassificationExtractor,
-    JSONExtractor,
-)
+# Redirect imports to _lib
+_lib_path = Path(__file__).parent.parent / "_lib"
+if _lib_path.exists() and str(_lib_path) not in sys.path:
+    sys.path.insert(0, str(_lib_path.parent))
 
-# Standard integration
-from .standard_integration import StandardExample
-
-# Output parsers
-from .output_parsers import (
-    get_parser,
-    OutputParser,
-    ParserResult,
-    ClassificationParser,
-    SentimentParser,
-    ExtractionParser,
-    BooleanParser,
-    RegexParser,
-)
-
-__all__ = [
-    # Core
-    "CacheFabric",
-    "ContextScope",
-    "ContextEntry",
-    # Backends
-    "InMemoryFabric",
-    "RedisFabric",
-    "VectorFabric",
-    # Factory
-    "create_cache_fabric",
-    # Nexus Integration
-    "store_manifest_contexts",
-    "get_router_prompt_from_fabric",
-    # Runtime Integration
-    "FabricAwareRuntime",
-    "track_execution_with_fabric",
-    "record_feedback_to_fabric",
-    # Runtime Base
-    "NexusRuntime",
-    "ResultExtractor",
-    "MessagesStateExtractor",
-    "ClassificationExtractor",
-    "JSONExtractor",
-    # Standard Integration
-    "StandardExample",
-    # Output Parsers
-    "get_parser",
-    "OutputParser",
-    "ParserResult",
-    "ClassificationParser",
-    "SentimentParser",
-    "ExtractionParser",
-    "BooleanParser",
-    "RegexParser",
-]
-
+# Re-export from _lib for backward compatibility
+try:
+    from _lib.runtime import NexusRuntime, StandardExample, ResultExtractor
+    from _lib.cache_fabric import CacheFabric, create_cache_fabric
+    from _lib.output_parsers import get_parser, OutputParser
+    from _lib.tools import ModelConfig, setup_observability
+    
+    __all__ = [
+        "NexusRuntime",
+        "StandardExample",
+        "ResultExtractor",
+        "CacheFabric",
+        "create_cache_fabric",
+        "get_parser",
+        "OutputParser",
+        "ModelConfig",
+        "setup_observability",
+    ]
+except ImportError as e:
+    import warnings
+    warnings.warn(
+        f"Failed to import from _lib: {e}. "
+        "Please update imports to use _lib directly.",
+        DeprecationWarning
+    )
+    __all__ = []

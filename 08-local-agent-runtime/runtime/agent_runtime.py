@@ -15,7 +15,7 @@ from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, ToolMe
 from langchain_core.tools import BaseTool
 import operator
 
-from universal_agent_tools.ollama_tools import (
+from _lib.tools.universal_agent_tools.ollama_tools import (
     MCPTool,
     MCPToolLoader,
     create_llm_with_tools,
@@ -27,7 +27,7 @@ try:
     import sys
     from pathlib import Path
     sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-    from universal_agent_tools.observability_helper import setup_observability
+    from _lib.tools.universal_agent_tools.observability_helper import setup_observability
     OBSERVABILITY_AVAILABLE = True
 except ImportError:
     OBSERVABILITY_AVAILABLE = False

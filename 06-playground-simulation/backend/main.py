@@ -25,7 +25,7 @@ from llm_provider import create_provider
 
 # Setup observability
 try:
-    from universal_agent_tools.observability_helper import setup_observability
+    from _lib.tools.universal_agent_tools.observability_helper import setup_observability
     setup_observability("playground-simulation")
 except ImportError:
     pass

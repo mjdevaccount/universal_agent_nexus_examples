@@ -21,7 +21,7 @@ from universal_agent_nexus.compiler import parse
 from universal_agent_nexus.ir.pass_manager import create_default_pass_manager, OptimizationLevel
 from universal_agent_nexus.adapters.langgraph import LangGraphRuntime
 from universal_agent_nexus.ir import ManifestIR
-from universal_agent_tools.observability_helper import setup_observability, trace_runtime_execution
+from ..tools.universal_agent_tools.observability_helper import setup_observability, trace_runtime_execution
 
 logger = logging.getLogger(__name__)
 
