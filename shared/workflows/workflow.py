@@ -325,8 +325,8 @@ class Workflow:
         )
         
         try:
-            # Invoke (LangGraph handles async)
-            final_state = self.graph.invoke(initial_state)
+            # Invoke async (LangGraph handles async nodes)
+            final_state = await self.graph.ainvoke(initial_state)
             
             elapsed = (
                 datetime.now() - self._start_time

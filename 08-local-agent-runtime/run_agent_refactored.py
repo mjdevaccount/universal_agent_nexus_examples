@@ -18,7 +18,7 @@ from typing import Dict, Any, List
 from datetime import datetime
 
 from pydantic import BaseModel, Field
-from langchain_openai import ChatOpenAI
+from langchain_ollama import ChatOllama
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -154,7 +154,13 @@ async def main():
     print("Example 08: Local Agent Runtime - December 2025 Tool Integration")
     print("="*70 + "\n")
     
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7, max_tokens=300)
+    # Initialize LLM (local qwen3 via Ollama)
+    llm = ChatOllama(
+        model="qwen3:8b",
+        base_url="http://localhost:11434",
+        temperature=0.7,
+        num_predict=300,
+    )
     workflow = LocalAgentWorkflow(llm)
     
     queries = [

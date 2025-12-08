@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Dict, Any
 from datetime import datetime
 
-from langchain_openai import ChatOpenAI
+from langchain_ollama import ChatOllama
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -80,8 +80,8 @@ class HelloWorldWorkflow(Workflow):
         """
         start = datetime.now()
         
-        # Execute
-        result = await self.execute({"name": name})
+        # Execute workflow
+        result = await super().invoke({"name": name})
         
         duration = (datetime.now() - start).total_seconds() * 1000
         
@@ -103,11 +103,12 @@ async def main():
     print("Example 01: Hello World - December 2025 IEV Pattern")
     print("="*60 + "\n")
     
-    # Initialize LLM
-    llm = ChatOpenAI(
-        model="gpt-4o-mini",
+    # Initialize LLM (local qwen3 via Ollama)
+    llm = ChatOllama(
+        model="qwen3:8b",
+        base_url="http://localhost:11434",
         temperature=0.7,
-        max_tokens=100,
+        num_predict=100,
     )
     
     # Create workflow

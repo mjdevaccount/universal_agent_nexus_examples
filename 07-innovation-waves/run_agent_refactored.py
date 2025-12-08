@@ -18,7 +18,7 @@ from typing import Dict, Any, List
 from datetime import datetime
 
 from pydantic import BaseModel, Field
-from langchain_openai import ChatOpenAI
+from langchain_ollama import ChatOllama
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -148,8 +148,19 @@ async def main():
     print("Example 07: Innovation Waves - December 2025 Advanced IEV")
     print("="*70 + "\n")
     
-    llm_reasoning = ChatOpenAI(model="gpt-4o-mini", temperature=0.8, max_tokens=800)
-    llm_extraction = ChatOpenAI(model="gpt-4o-mini", temperature=0.1, max_tokens=500)
+    # Initialize LLMs (local qwen3 via Ollama)
+    llm_reasoning = ChatOllama(
+        model="qwen3:8b",
+        base_url="http://localhost:11434",
+        temperature=0.8,  # Creative reasoning
+        num_predict=800,
+    )
+    llm_extraction = ChatOllama(
+        model="qwen3:8b",
+        base_url="http://localhost:11434",
+        temperature=0.1,  # Deterministic extraction
+        num_predict=500,
+    )
     
     workflow = InnovationWorkflow(llm_reasoning, llm_extraction)
     

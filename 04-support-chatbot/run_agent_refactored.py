@@ -22,7 +22,7 @@ from typing import Dict, Any, TypedDict
 from datetime import datetime
 
 from pydantic import BaseModel, Field
-from langchain_openai import ChatOpenAI
+from langchain_ollama import ChatOllama
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -238,11 +238,12 @@ async def main():
     print("Example 04: Support Chatbot - December 2025 Pattern")
     print("="*70 + "\n")
     
-    # Initialize LLM
-    llm = ChatOpenAI(
-        model="gpt-4o-mini",
+    # Initialize LLM (local qwen3 via Ollama)
+    llm = ChatOllama(
+        model="qwen3:8b",
+        base_url="http://localhost:11434",
         temperature=0.7,
-        max_tokens=300,
+        num_predict=300,
     )
     
     # Create workflow

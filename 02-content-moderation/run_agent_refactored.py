@@ -23,7 +23,7 @@ from typing import TypedDict, Any, Dict
 from datetime import datetime
 
 from pydantic import BaseModel, Field
-from langchain_openai import ChatOpenAI
+from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -165,7 +165,7 @@ class ContentModerationWorkflow(Workflow):
         start = datetime.now()
         
         # Run workflow
-        result = await self.execute({"content": content})
+        result = await super().invoke({"content": content})
         
         # Extract validated result
         validated = result.get("validated", {})
@@ -197,17 +197,19 @@ async def main():
     print("Example 02: Content Moderation - December 2025 IEV Pattern")
     print("="*70 + "\n")
     
-    # Initialize LLMs
-    llm_reasoning = ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=0.8,
-        max_tokens=500,
+    # Initialize LLMs (local qwen3 via Ollama)
+    llm_reasoning = ChatOllama(
+        model="qwen3:8b",
+        base_url="http://localhost:11434",
+        temperature=0.8,  # Creative reasoning
+        num_predict=500,
     )
     
-    llm_extraction = ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=0.1,
-        max_tokens=200,
+    llm_extraction = ChatOllama(
+        model="qwen3:8b",
+        base_url="http://localhost:11434",
+        temperature=0.1,  # Deterministic extraction
+        num_predict=200,
     )
     
     # Create workflow
@@ -217,7 +219,27 @@ async def main():
     test_content_path = Path(__file__).parent / "test_content.json"
     if test_content_path.exists():
         with open(test_content_path) as f:
-            test_cases = json.load(f)
+            test_data = json.load(f)
+            # Handle different JSON structures
+            if isinstance(test_data, list):
+                test_cases = test_data
+            elif isinstance(test_data, dict):
+                if "test_cases" in test_data:
+                    # Extract test cases from nested structure
+                    test_cases = [
+                        {
+                            "name": tc.get("id", "Test"),
+                            "content": tc.get("content", "")
+                        }
+                        for tc in test_data["test_cases"]
+                    ]
+                elif "content" in test_data:
+                    # Single test case
+                    test_cases = [{"name": "Test", "content": test_data["content"]}]
+                else:
+                    test_cases = []
+            else:
+                test_cases = []
     else:
         test_cases = [
             {
@@ -240,12 +262,12 @@ async def main():
             result = await workflow.invoke(test_case["content"])
             results.append(result)
             
-            print(f"  ✅ Severity: {result['severity']}")
-            print(f"  ✅ Category: {result['category']}")
-            print(f"  ✅ Confidence: {result['confidence']:.2f}")
-            print(f"  ✅ Duration: {result['metrics']['total_duration_ms']:.0f}ms\n")
+            print(f"  [OK] Severity: {result['severity']}")
+            print(f"  [OK] Category: {result['category']}")
+            print(f"  [OK] Confidence: {result['confidence']:.2f}")
+            print(f"  [OK] Duration: {result['metrics']['total_duration_ms']:.0f}ms\n")
         except Exception as e:
-            print(f"  ❌ Error: {e}\n")
+            print(f"  [ERROR] Error: {e}\n")
             results.append({"error": str(e)})
     
     # Summary
@@ -253,11 +275,14 @@ async def main():
     print("SUMMARY")
     print("="*70)
     successful = sum(1 for r in results if "error" not in r)
-    print(f"Successful: {successful}/{len(results)}")
-    print(f"Success Rate: {100*successful/len(results):.1f}%")
-    print(f"\n✅ All nodes executed successfully")
-    print(f"✅ No parsing errors (IEV pattern reliability)")
-    print(f"✅ Full observability with metrics\n")
+    if len(results) > 0:
+        print(f"Successful: {successful}/{len(results)}")
+        print(f"Success Rate: {100*successful/len(results):.1f}%")
+    else:
+        print("No test cases to run")
+    print(f"\n[OK] All nodes executed successfully")
+    print(f"[OK] No parsing errors (IEV pattern reliability)")
+    print(f"[OK] Full observability with metrics\n")
 
 
 if __name__ == "__main__":
