@@ -33,19 +33,19 @@ def get_project_root() -> Path:
 
 class GemmaToolCallingProvider:
     """
-    Ultra-lightweight function calling using Gemma 2B (2GB).
+    Ultra-lightweight function calling using Gemma 2B (2GB) or Qwen3 (8B).
     
     Features:
     - Native function calling support
-    - 80 tokens/sec on M1 Mac
     - Works with Ollama (free)
-    - 2GB model size
+    - Auto-detects best available model
     
     Setup:
-        ollama pull gemma:2b-instruct
+        ollama pull gemma:2b-instruct  # 2GB, faster
+        ollama pull qwen3:8b           # 5.2GB, better quality
     """
     
-    def __init__(self, archetype: str, project_root: Optional[Path] = None):
+    def __init__(self, archetype: str, project_root: Optional[Path] = None, model: Optional[str] = None):
         self.archetype = archetype
         
         if project_root is None:
@@ -63,6 +63,12 @@ class GemmaToolCallingProvider:
         
         # Check if Ollama is available
         self.ollama_available = self._check_ollama()
+        
+        # Auto-detect best model if not specified (defaults to qwen3:8b)
+        if model:
+            self.model = model
+        else:
+            self.model = self._detect_best_model()
     
     def _load_role(self) -> Dict:
         """Load role definition from fabric archetypes."""
@@ -106,11 +112,46 @@ class GemmaToolCallingProvider:
                 ["ollama", "list"],
                 capture_output=True,
                 text=True,
+                encoding='utf-8',
+                errors='replace',
                 timeout=5
             )
             return result.returncode == 0
         except (subprocess.TimeoutExpired, FileNotFoundError):
             return False
+    
+    def _detect_best_model(self) -> str:
+        """Auto-detect best available model. Prefers qwen3:8b for better quality."""
+        if not self.ollama_available:
+            return "qwen3:8b"  # Default preference
+        
+        try:
+            result = subprocess.run(
+                ["ollama", "list"],
+                capture_output=True,
+                text=True,
+                encoding='utf-8',
+                errors='replace',
+                timeout=5
+            )
+            if result.returncode == 0:
+                output = result.stdout.lower()
+                # Prefer qwen3:8b for better quality, fallback to gemma
+                if "qwen3:8b" in output:
+                    return "qwen3:8b"
+                elif "qwen3" in output:
+                    # Find the exact qwen3 model name
+                    for line in result.stdout.split('\n'):
+                        if 'qwen3' in line.lower():
+                            parts = line.split()
+                            if parts:
+                                return parts[0]  # Return the model name
+                elif "gemma:2b-instruct" in output or "gemma:2b" in output:
+                    return "gemma:2b-instruct"
+        except Exception:
+            pass
+        
+        return "qwen3:8b"  # Default to qwen3:8b
     
     async def complete(self, context: str, scenario: str, temperature: float = 0.7) -> str:
         """
@@ -130,14 +171,12 @@ class GemmaToolCallingProvider:
         
         system_prompt = f"""{self.role_def.get('system_prompt_template', '')}
 
-You have access to these functions:
-{tools_json}
+You can use functions if needed, but MOST OF THE TIME just speak naturally as your character.
+Only use functions when you need to analyze or observe something specific.
 
-To use a function, respond with:
-<functioncall> {{"name": "function_name", "arguments": {{"arg": "value"}}}} </functioncall>
+Available functions: {', '.join([t['name'] for t in self.tools]) if self.tools else 'none'}
 
-If no function is needed, respond naturally as your character.
-Keep responses VERY SHORT (1-2 sentences max)."""
+IMPORTANT: Speak naturally. Keep responses VERY SHORT (1-2 sentences max)."""
 
         # Build full prompt
         prompt = f"""{system_prompt}
@@ -161,14 +200,15 @@ Your response:"""
                     # Execute tool
                     tool_result = await self._execute_tool(tool_call)
                     
-                    # Get final response
-                    final_prompt = f"""{prompt}
+                    # Get final response - use simpler prompt
+                    final_prompt = f"""{self.role_def.get('system_prompt_template', '')}
 
-{response}
+Scenario: {scenario}
 
-Tool result: {json.dumps(tool_result)}
+Recent conversation:
+{context}
 
-Based on this result, provide your final brief response (1-2 sentences):"""
+You analyzed the situation. Now respond naturally as your character (1-2 sentences max):"""
                     
                     response = await self._call_ollama(final_prompt, temperature)
             
@@ -183,12 +223,14 @@ Based on this result, provide your final brief response (1-2 sentences):"""
         result = await asyncio.to_thread(
             lambda: subprocess.run(
                 [
-                    "ollama", "run", "gemma:2b-instruct",
+                    "ollama", "run", self.model,
                     "--nowordwrap",
                 ],
                 input=prompt,
                 capture_output=True,
                 text=True,
+                encoding='utf-8',
+                errors='replace',
                 timeout=30
             )
         )
@@ -234,10 +276,45 @@ Based on this result, provide your final brief response (1-2 sentences):"""
     
     def _clean_response(self, response: str) -> str:
         """Clean up response text."""
-        # Remove any remaining function call tags
+        # Remove thinking/reasoning blocks (common in qwen3)
+        response = re.sub(r'Thinking\.\.\..*?\.\.\.done thinking\.', '', response, flags=re.DOTALL | re.IGNORECASE)
+        response = re.sub(r'Thinking\.\.\..*?Alright.*?done\.', '', response, flags=re.DOTALL | re.IGNORECASE)
+        # Remove function call tags and content
         response = re.sub(r'<functioncall>.*?</functioncall>', '', response, flags=re.DOTALL)
-        # Remove extra whitespace
+        # Remove JSON-like function call syntax
+        response = re.sub(r'\w+\([^)]*\)', '', response)
+        # Remove artifacts like </start_of_turn>, <start_of_turn>, etc.
+        response = re.sub(r'</?start_of_turn>', '', response, flags=re.IGNORECASE)
+        response = re.sub(r'</?end_of_turn>', '', response, flags=re.IGNORECASE)
+        # Remove standalone JSON objects that look like function calls
+        response = re.sub(r'\{"name":\s*"[^"]+",\s*"arguments":\s*[^}]+\}', '', response)
+        # Remove analyze_situation, speak, etc. as standalone words
+        response = re.sub(r'\b(analyze_situation|observe_situation|speak)\b', '', response, flags=re.IGNORECASE)
+        # Remove "Okay, the user wants me to..." style reasoning
+        response = re.sub(r'Okay[^.]*\.\s*', '', response, flags=re.IGNORECASE)
+        # Remove "Let me make sure..." style reasoning
+        response = re.sub(r'Let me (make sure|check|think|confirm)[^.]*\.\s*', '', response, flags=re.IGNORECASE)
+        # Remove "Wait, (maybe|perhaps|no)" style reasoning
+        response = re.sub(r'Wait[^.]*\.\s*', '', response, flags=re.IGNORECASE)
+        # Remove "Maybe I need to..." style reasoning
+        response = re.sub(r'Maybe I (need to|should|can)[^.]*\.\s*', '', response, flags=re.IGNORECASE)
+        # Remove "I should check..." style reasoning
+        response = re.sub(r'I should (check|make sure|clarify)[^.]*\.\s*', '', response, flags=re.IGNORECASE)
+        # Remove "So, I need to..." style reasoning
+        response = re.sub(r'So[^.]*\.\s*', '', response, flags=re.IGNORECASE)
+        # Remove "Alright, (that should work|done)" style endings
+        response = re.sub(r'Alright[^.]*\.\s*', '', response, flags=re.IGNORECASE)
+        # Remove extra whitespace and clean up
         response = ' '.join(response.split())
+        # Remove leading/trailing punctuation artifacts
+        response = response.strip('.,;:!?')
+        # Take only the last sentence or two (usually the actual response)
+        sentences = [s.strip() for s in response.split('.') if s.strip() and len(s.strip()) > 10]
+        if len(sentences) > 2:
+            # Keep last 2 sentences
+            response = '. '.join(sentences[-2:])
+        elif sentences:
+            response = '. '.join(sentences)
         return response.strip()
     
     async def _fallback_complete(self, context: str, scenario: str, temperature: float) -> str:
@@ -263,10 +340,12 @@ Based on this result, provide your final brief response (1-2 sentences):"""
     
     def get_info(self) -> Dict:
         """Get provider info."""
+        model_name = self.model if hasattr(self, 'model') else "gemma:2b-instruct"
         return {
-            "provider": "gemma-2b-function-calling" if self.ollama_available else "openai-fallback",
+            "provider": f"ollama-{model_name}" if self.ollama_available else "openai-fallback",
             "archetype": self.archetype,
-            "model_size": "2GB" if self.ollama_available else "cloud",
+            "model": model_name,
+            "model_size": "5.2GB" if "qwen3" in model_name else "2GB" if self.ollama_available else "cloud",
             "tools": [t["name"] for t in self.tools],
             "role": self.role_def.get("name"),
             "ollama_available": self.ollama_available,
@@ -302,7 +381,13 @@ class FabricCLIProvider:
     def _check_fabric(self) -> bool:
         """Check if Fabric CLI is available."""
         try:
-            subprocess.run(["fabric", "--version"], capture_output=True, check=True)
+            subprocess.run(
+                ["fabric", "--version"],
+                capture_output=True,
+                check=True,
+                encoding='utf-8',
+                errors='replace'
+            )
             return True
         except (subprocess.CalledProcessError, FileNotFoundError):
             return False
@@ -320,6 +405,8 @@ class FabricCLIProvider:
                         input=full_prompt,
                         capture_output=True,
                         text=True,
+                        encoding='utf-8',
+                        errors='replace',
                         check=True,
                         timeout=30
                     )
@@ -341,24 +428,26 @@ class FabricCLIProvider:
 
 
 # Default provider factory
-def create_provider(archetype: str, provider_type: str = "gemma") -> Any:
+def create_provider(archetype: str, provider_type: str = "auto", model: Optional[str] = None) -> Any:
     """
     Create LLM provider for archetype.
     
     Args:
         archetype: Name of archetype (bully, shy_kid, mediator, etc.)
-        provider_type: "gemma" (recommended), "fabric", or "auto"
+        provider_type: "gemma", "fabric", or "auto" (default: auto-detect)
+        model: Specific model to use (e.g., "qwen3:8b", "gemma:2b-instruct"). 
+               If None, auto-detects best available.
     
     Returns:
         Provider instance
     """
     if provider_type == "gemma":
-        return GemmaToolCallingProvider(archetype)
+        return GemmaToolCallingProvider(archetype, model=model)
     elif provider_type == "fabric":
         return FabricCLIProvider(archetype)
     else:
         # Auto-detect best available
-        provider = GemmaToolCallingProvider(archetype)
+        provider = GemmaToolCallingProvider(archetype, model=model)
         if provider.ollama_available:
             return provider
         
@@ -366,5 +455,5 @@ def create_provider(archetype: str, provider_type: str = "gemma") -> Any:
         if fabric_provider.fabric_available:
             return fabric_provider
         
-        # Return Gemma provider anyway (will fallback to OpenAI)
+        # Return provider anyway (will fallback to OpenAI)
         return provider
