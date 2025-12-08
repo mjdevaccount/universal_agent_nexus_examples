@@ -11,6 +11,7 @@ graphs:
         label: "Generate Greeting"
         config:
           prompt: "Generate a friendly greeting for {name}"
+          default_model: "ollama://qwen3:8b"
     edges: []
 
 tools: []

@@ -1,0 +1,4 @@
+universal-agent-nexus[langgraph]>=3.0.1
+langchain-core
+pyyaml
+
