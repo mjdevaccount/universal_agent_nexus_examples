@@ -28,6 +28,7 @@ from shared.workflows.common_nodes import (
     IntelligenceNode,
     ExtractionNode,
     ValidationNode,
+    ValidationMode,
 )
 from shared.workflows.workflow import Workflow
 
@@ -81,6 +82,7 @@ class ResearchWorkflow(Workflow):
         
         validation = ValidationNode(
             output_schema=ResearchFindings,
+            mode=ValidationMode.BEST_EFFORT,  # Allow repair for partial extractions
             validation_rules={
                 "min_points": valid_points_count,
                 "summary_quality": valid_summary_length,
@@ -125,13 +127,13 @@ async def main():
         model="qwen3:8b",
         base_url="http://localhost:11434",
         temperature=0.8,  # Creative reasoning
-        num_predict=600,
+        # num_predict removed - using model default prevents empty responses
     )
     llm_extraction = ChatOllama(
         model="qwen3:8b",
         base_url="http://localhost:11434",
         temperature=0.1,  # Deterministic extraction
-        num_predict=400,
+        # num_predict removed - using model default prevents empty responses
     )
     
     workflow = ResearchWorkflow(llm_reasoning, llm_extraction)
