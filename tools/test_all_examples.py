@@ -257,13 +257,13 @@ class ExampleTestRunner:
             result = self.test_example(spec)
             self.results.append(result)
 
-            # Print status
+            # Print status (using ASCII-safe symbols for Windows compatibility)
             status_symbol = {
-                "passed": "✅",
-                "failed": "❌",
-                "skipped": "⏭️",
-                "error": "⚠️",
-            }.get(result.status, "?")
+                "passed": "[PASS]",
+                "failed": "[FAIL]",
+                "skipped": "[SKIP]",
+                "error": "[ERROR]",
+            }.get(result.status, "[?]")
 
             print(f"{status_symbol} [{result.code}] {result.title}: {result.status.upper()}")
             if result.status != "passed" and result.message:
@@ -286,12 +286,13 @@ class ExampleTestRunner:
         total_time = sum(r.duration for r in self.results)
 
         print(f"Total: {total}")
-        print(f"✅ Passed: {passed}")
-        print(f"❌ Failed: {failed}")
-        print(f"⏭️  Skipped: {skipped}")
-        print(f"⚠️  Errors: {errors}")
-        print(f"⏱️  Total time: {total_time:.2f}s")
-        print(f"⏱️  Average time: {total_time / total:.2f}s per example" if total > 0 else "")
+        print(f"[PASS] Passed: {passed}")
+        print(f"[FAIL] Failed: {failed}")
+        print(f"[SKIP] Skipped: {skipped}")
+        print(f"[ERROR] Errors: {errors}")
+        print(f"Total time: {total_time:.2f}s")
+        if total > 0:
+            print(f"Average time: {total_time / total:.2f}s per example")
 
         if failed > 0 or errors > 0:
             print("\nFailed/Error Examples:")
