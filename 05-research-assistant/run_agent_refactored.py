@@ -100,7 +100,7 @@ class ResearchWorkflow(Workflow):
     
     async def invoke(self, query: str) -> Dict[str, Any]:
         start = datetime.now()
-        result = await self.execute({"query": query})
+        result = await super().invoke({"query": query})
         duration = (datetime.now() - start).total_seconds() * 1000
         
         validated = result.get("validated", {})

@@ -33,6 +33,7 @@ from shared.workflows.common_nodes import (
     IntelligenceNode,
     ExtractionNode,
     ValidationNode,
+    ValidationMode,
 )
 from shared.workflows.workflow import Workflow
 
@@ -147,13 +148,13 @@ class DataPipelineWorkflow(Workflow):
         
         validation = ValidationNode(
             output_schema=EnrichedRecord,
+            mode=ValidationMode.BEST_EFFORT,  # December 2025 pattern: explicit mode
             validation_rules={
                 "valid_sentiment": validate_sentiment_in_set,
                 "valid_category": validate_category_in_set,
                 "confidence_bounds": validate_confidence_range,
                 "entities_is_list": validate_entities_is_list,
             },
-            repair_on_fail=True,
             name="validation",
             description="Validate enrichment data",
         )
@@ -188,7 +189,7 @@ class DataPipelineWorkflow(Workflow):
         start = datetime.now()
         
         # Run workflow
-        result = await self.execute({"raw_data": raw_data})
+        result = await super().invoke({"raw_data": raw_data})
         
         # Extract validated result
         validated = result.get("validated", {})

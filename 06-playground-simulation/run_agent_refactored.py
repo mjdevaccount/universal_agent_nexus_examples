@@ -107,7 +107,7 @@ class PlaygroundWorkflow(Workflow):
     
     async def invoke(self, prompt: str) -> Dict[str, Any]:
         start = datetime.now()
-        result = await self.execute({"prompt": prompt})
+        result = await super().invoke({"prompt": prompt})
         duration = (datetime.now() - start).total_seconds() * 1000
         
         validated = result.get("validated", {})
