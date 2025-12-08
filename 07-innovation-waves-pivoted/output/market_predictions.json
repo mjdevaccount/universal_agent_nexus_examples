@@ -10,30 +10,25 @@
       "Content Creation"
     ]
   },
-  "timestamp": "2025-12-07T23:33:35.408016",
-  "affected_companies": 1000,
+  "timestamp": "2025-12-07T23:53:21.455557",
+  "affected_companies": 100,
   "analysis": {
-    "summary": "**1. Adopters:** Tech giants (e.g., Microsoft, Google) and consulting firms will lead, followed by startups in content creation and software development.  \n**2. Timeline:** Rapid adoption (6\u201312 months) in early adopter segments, with mainstream uptake (18\u201336 months) as tools mature.  \n**3. Winners/Losers:** Winners: AI-first startups, software firms integrating advanced reasoning. Losers: Legacy customer service providers reliant on basic chatbots.  \n**4. Dynamics:** Accelerated competition in AI tools, partnerships between incumbents and startups, and commoditization of basic AI services. Open-sourcing may spur innovation but fragment the market.  \n\n(150 words)",
+    "summary": "**1. Adopters:** Tech giants (Google, Microsoft) for rapid integration, startups in software/content creation for cost-effective tools, and consulting firms for enhanced problem-solving.  \n**2. Timeline:** Early adoption (0\u20136 months) by innovators; mid-term (6\u201318 months) by mid-market players; saturation (18+ months) as open-source adoption scales.  \n**3. Winners:** Startups leveraging AI for differentiation, software firms enhancing productivity tools. Losers: Legacy consultancies struggling with automation, low-cost customer service providers facing obsolescence.  \n",
     "adoption": {
       "adoption_timeline_months": 18,
       "market_cap_redistribution_trillions": 2.3,
-      "disruption_score": 9.350000000000001,
-      "beneficiary_sectors": [
-        "Software",
-        "Consulting",
-        "Customer Service",
-        "Content Creation"
-      ],
+      "disruption_score": 9.4,
+      "beneficiary_sectors": [],
       "winner_companies": [],
       "loser_sectors": []
     },
     "policy_recommendations": [
-      ""
+      "1. **Break up monopolistic dominance**: Enforce anti-monopoly laws to prevent the 70% market share player from stifling competition. Mandate data portability and API access to smaller firms,"
     ]
   },
-  "narrative": "**Market Impact Analysis - Generative AI Patent Drop**  \nThis breakthrough in multimodal generative AI, with 10x improvements in reasoning and code generation, will disrupt software, consulting, customer service, and content creation sectors. Open-sourcing by a leading institution accelerates adoption, enabling rapid integration into workflows. Early adopters\u2014tech giants (Microsoft, Google), consulting firms, and AI startups\u2014will leverage the tool to automate complex tasks, optimize processes, and create hyper-personalized content. The S-curve adoption timeline suggests 6\u201312 months for early-stage integration, with mainstream adoption peaking in 18 months. However",
+  "narrative": "**Market Impact Analysis - Generative AI Patent Drop**  \n\nThe Generative AI Patent Drop\u2019s 8.5 disruption level signals a seismic shift in AI-driven productivity, with 80% market adoption expected by 18 months. Sectors like software, consulting, customer service, and content creation will see rapid transformation, as tools automate workflows, reduce costs, and unlock new creative possibilities. Tech giants and startups will lead early adoption, leveraging open-source capabilities to outpace incumbents. However",
   "cache_performance": {
-    "archetype_cache_reuses": 1000,
+    "archetype_cache_reuses": 100,
     "estimated_cache_hit_rate": 0.87,
     "token_savings_percent": 85
   }

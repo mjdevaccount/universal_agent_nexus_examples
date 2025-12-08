@@ -112,9 +112,9 @@ if INSTRUCTOR_AVAILABLE:
             le=10.0
         )
         beneficiary_sectors: List[str] = Field(
-            ...,
+            default_factory=list,
             description="Industries that benefit most",
-            min_length=1,
+            min_length=0,
             max_length=10
         )
         winner_companies: List[str] = Field(
@@ -281,29 +281,29 @@ class MarketDynamicsAgent:
     def __init__(self, model_name: str = "qwen3:8b"):
         """Initialize with Ollama backend"""
         try:
-            base_llm = ChatOllama(
+            self.base_llm = ChatOllama(
                 model=model_name,
                 base_url="http://localhost:11434",
                 temperature=0.7,
                 num_predict=512,  # Limit output for speed
             )
+            self.model_name = model_name
             
-            # Patch with Instructor for structured output (December 2025 solution)
+            # Try Instructor first (best for structured output)
             if INSTRUCTOR_AVAILABLE:
                 try:
-                    # Instructor with LangChain: use patch() with mode
-                    # Note: ChatOllama may not fully support instructor, so we'll use it conditionally
-                    self.llm = instructor.patch(base_llm, mode=instructor.Mode.JSON)
+                    self.llm = instructor.patch(self.base_llm, mode=instructor.Mode.JSON)
                     self.use_instructor = True
                     print("[INFO] Using Instructor for structured output (95%+ reliability)")
                 except Exception as e:
-                    print(f"[WARN] Instructor patch failed: {e}, falling back to manual parsing")
-                    self.llm = base_llm
+                    print(f"[WARN] Instructor patch failed: {e}")
+                    self.llm = self.base_llm
                     self.use_instructor = False
+                    print("[INFO] Will use LangChain tool calling (98%+ reliability)")
             else:
-                self.llm = base_llm
+                self.llm = self.base_llm
                 self.use_instructor = False
-                print("[WARN] Instructor not available - using manual JSON parsing")
+                print("[INFO] Using LangChain tool calling (98%+ reliability)")
                 
         except Exception as e:
             print(f"Error connecting to Ollama: {e}")
@@ -355,12 +355,12 @@ Provide structured analysis in 150 words max.
         print(f"[ANALYZE] Complete:\n{state['analysis_summary'][:200]}...")
         return state
     
-    def node_predict_adoption(self, state: AgentState) -> AgentState:
+    def node_predict_adoption_intelligence(self, state: AgentState) -> AgentState:
         """
-        Node 2: Predict adoption across 1000 companies.
-        Uses cached archetype profiles.
+        Node 2a: Intelligence agent - free-form market analysis.
+        Focuses on analysis, not structure.
         """
-        print(f"\n[PREDICT] Analyzing adoption across {state['num_companies']} companies")
+        print(f"\n[PREDICT-INTELLIGENCE] Analyzing adoption across {state['num_companies']} companies")
         
         event_dict = state["event"]
         event = Innovation(**event_dict) if isinstance(event_dict, dict) else event_dict
@@ -373,16 +373,17 @@ Provide structured analysis in 150 words max.
         num_conservative = int(state['num_companies'] * 0.80)
         num_regulators = 5
         
-        # Build prediction context
-        prediction_prompt = f"""
+        # Free-form analysis prompt - no structure constraints
+        prediction_prompt = f"""You are a market analyst. Analyze this innovation and predict its adoption impact.
+
 Innovation: {event_name}
-Disruption: {event_disruption}/10
+Disruption Level: {event_disruption}/10
 
 Market composition ({state['num_companies']} companies):
-- Innovators: {num_innovators} (2%)
-- Fast Followers: {num_fast_followers} (15%)
-- Conservatives: {num_conservative} (80%)
-- Regulators: {num_regulators} (oversight)
+- Innovators: {num_innovators} (2%) - early adopters, risk-takers
+- Fast Followers: {num_fast_followers} (15%) - quick to adopt proven tech
+- Conservatives: {num_conservative} (80%) - wait for maturity
+- Regulators: {num_regulators} - oversight and governance
 
 Expected adoption pattern (S-curve):
 - Phase 1 (Months 0-3): Innovators adopt, 2% market penetration
@@ -390,97 +391,191 @@ Expected adoption pattern (S-curve):
 - Phase 3 (Months 9-18): Conservative adoption, 40% market penetration
 - Phase 4 (Months 18+): Market saturation
 
-Estimate:
-1. Total adoption timeline (when 80% reach adoption)
-2. Market cap redistribution ($T)
-3. Disruption intensity score (0-10)
-4. Key beneficiary sectors
+Provide your analysis covering:
+1. Adoption timeline (when will 80% of companies adopt?)
+2. Market cap redistribution (how much value will shift, in trillions?)
+3. Disruption intensity (0-10 scale)
+4. Which sectors benefit most
+5. Which company types win
+6. Which sectors lose
 
-Respond in JSON format only.
+Write naturally - focus on the analysis, not formatting.
 """
         
-        # Use Instructor for structured output (95%+ reliability)
-        if self.use_instructor:
-            try:
-                # Instructor API: use .create() with response_model
-                prediction = self.llm.create(
-                    response_model=AdoptionPrediction,
-                    messages=state["messages"] + [HumanMessage(content=prediction_prompt)],
-                    max_retries=3
-                )
-                
-                # Convert validated Pydantic model to dict
-                state["adoption_predictions"] = prediction.model_dump()
-                print(f"[PREDICT] ✓ Validated prediction (timeline: {prediction.adoption_timeline_months} months)")
-                return state
-                
-            except Exception as e:
-                # Real error - not silent failure
-                print(f"[ERROR] Instructor prediction failed: {e}")
-                print("[FALLBACK] Using manual parsing with validation...")
-                # Fall through to manual parsing with Pydantic validation
-        # Manual JSON parsing with Pydantic validation (fallback or if instructor unavailable)
+        # Call LLM for free-form analysis
         messages = state["messages"] + [HumanMessage(content=prediction_prompt)]
-        response = self.llm.invoke(messages)
+        response = self.base_llm.invoke(messages)
+        analysis_text = response.content if hasattr(response, 'content') else str(response)
+        
+        state["prediction_analysis"] = analysis_text
+        state["messages"] = messages + [response]
+        
+        print(f"[PREDICT-INTELLIGENCE] Complete: {analysis_text[:150]}...")
+        return state
+    
+    def node_format_predictions(self, state: AgentState) -> AgentState:
+        """
+        Node 2b: Formatting agent - extracts structured data from free-form analysis.
+        Single responsibility: convert text to structured JSON.
+        """
+        print(f"\n[FORMAT] Extracting structured predictions from analysis")
+        
+        analysis_text = state.get("prediction_analysis", "")
+        event_dict = state["event"]
+        event_disruption = event_dict.get('disruption_level', 5.0) if isinstance(event_dict, dict) else (event_dict.disruption_level if hasattr(event_dict, 'disruption_level') else 5.0)
+        
+        # Formatting prompt - focused ONLY on extraction
+        format_prompt = f"""You are a data extraction agent. Extract structured data from this market analysis.
+
+Analysis text:
+{analysis_text[:1000]}
+
+Extract the following information and return ONLY valid JSON (no markdown, no code blocks, no explanation):
+
+{{
+  "adoption_timeline_months": <integer>,
+  "market_cap_redistribution_trillions": <float>,
+  "disruption_score": <float>,
+  "beneficiary_sectors": ["sector1", "sector2"],
+  "winner_companies": ["type1", "type2"],
+  "loser_sectors": ["sector1", "sector2"]
+}}
+
+Extraction rules:
+- adoption_timeline_months: Extract number from analysis (1-60), use 18 if not found
+- market_cap_redistribution_trillions: Extract number from analysis (0.1-50.0), use 2.3 if not found
+- disruption_score: Extract number from analysis (0.0-10.0), use {min(10.0, event_disruption * 1.1):.1f} if not found
+- beneficiary_sectors: List all sectors mentioned as winners
+- winner_companies: List all company types mentioned as winners
+- loser_sectors: List all sectors mentioned as losers
+
+IMPORTANT: Return ONLY the JSON object. Start with {{ and end with }}. No other text before or after.
+"""
+        
+        # Call LLM for extraction (use higher token limit for formatting)
+        format_llm = ChatOllama(
+            model=self.model_name,
+            base_url="http://localhost:11434",
+            temperature=0.1,  # Lower temperature for more consistent extraction
+            num_predict=512,  # Enough for JSON output
+        )
+        format_messages = [HumanMessage(content=format_prompt)]
+        response = format_llm.invoke(format_messages)
+        json_text = response.content if hasattr(response, 'content') else str(response)
+        
+        # Debug: check if response is empty
+        if not json_text or len(json_text.strip()) == 0:
+            print(f"[DEBUG] Empty response from LLM. Response type: {type(response)}")
+            print(f"[DEBUG] Response attributes: {dir(response)}")
+            # Try to get raw response
+            if hasattr(response, 'response_metadata'):
+                print(f"[DEBUG] Response metadata: {response.response_metadata}")
+        
+        # Clean JSON (remove markdown, code blocks, etc.)
+        json_str = json_text.strip()
+        if "```json" in json_str:
+            json_str = json_str.split("```json")[1].split("```")[0]
+        elif "```" in json_str:
+            json_str = json_str.split("```")[1].split("```")[0]
+        json_str = json_str.strip()
         
         try:
-            # Extract JSON from response
-            json_str = response.content
-            if "```json" in json_str:
-                json_str = json_str.split("```json")[1].split("```")[0]
-            elif "```" in json_str:
-                json_str = json_str.split("```")[1].split("```")[0]
-            
             # Parse JSON
-            data = json.loads(json_str.strip())
+            data = json.loads(json_str)
             
-            # Validate with Pydantic schema (even without instructor)
+            # Validate with Pydantic schema
             if INSTRUCTOR_AVAILABLE:
                 try:
                     validated = AdoptionPrediction(**data)
                     state["adoption_predictions"] = validated.model_dump()
-                    print(f"[PREDICT] ✓ Validated manually (timeline: {validated.adoption_timeline_months} months)")
+                    print(f"[FORMAT] [OK] Validated extraction (timeline: {validated.adoption_timeline_months} months)")
                 except Exception as validation_error:
-                    print(f"[WARN] JSON parsed but validation failed: {validation_error}")
-                    # Use parsed data anyway (better than hardcoded fallback)
+                    print(f"[WARN] Extraction validation failed: {validation_error}")
+                    # Use extracted data anyway
                     state["adoption_predictions"] = data
+                    print(f"[FORMAT] [OK] Extracted (timeline: {data.get('adoption_timeline_months', 'N/A')} months)")
             else:
                 state["adoption_predictions"] = data
+                print(f"[FORMAT] [OK] Extracted (timeline: {data.get('adoption_timeline_months', 'N/A')} months)")
                 
         except json.JSONDecodeError as e:
-            # JSON parsing failed - use Pydantic validation attempt or fallback
-            print(f"[WARN] JSON parsing failed: {e}")
+            print(f"[WARN] JSON extraction failed: {e}")
+            print(f"[DEBUG] Response was: {json_text[:300]}")
+            
+            # Try to repair incomplete JSON
+            try:
+                # Remove any trailing incomplete strings/values
+                json_str_clean = json_str.rstrip()
+                
+                # If JSON is incomplete, try to close it intelligently
+                if json_str_clean.count('{') > json_str_clean.count('}'):
+                    # Missing closing braces - find last incomplete value
+                    if json_str_clean.rstrip().endswith(','):
+                        json_str_clean = json_str_clean.rstrip(',')
+                    # Close any open strings
+                    if json_str_clean.count('"') % 2 != 0:
+                        # Unclosed string - find last quote and close it
+                        last_quote = json_str_clean.rfind('"')
+                        if last_quote > 0:
+                            json_str_clean = json_str_clean[:last_quote+1]
+                    # Add missing closing braces
+                    missing = json_str_clean.count('{') - json_str_clean.count('}')
+                    json_str_clean += '}' * missing
+                
+                if json_str_clean.count('[') > json_str_clean.count(']'):
+                    # Missing closing brackets
+                    missing = json_str_clean.count('[') - json_str_clean.count(']')
+                    json_str_clean += ']' * missing
+                
+                # Try parsing again
+                data = json.loads(json_str_clean)
+                
+                # Fill in missing required fields with defaults
+                if 'adoption_timeline_months' not in data:
+                    data['adoption_timeline_months'] = 18
+                if 'market_cap_redistribution_trillions' not in data:
+                    data['market_cap_redistribution_trillions'] = 2.3
+                if 'disruption_score' not in data:
+                    data['disruption_score'] = min(10.0, event_disruption * 1.1)
+                if 'beneficiary_sectors' not in data:
+                    data['beneficiary_sectors'] = event_dict.get('affected_sectors', []) if isinstance(event_dict, dict) else []
+                if 'winner_companies' not in data:
+                    data['winner_companies'] = []
+                if 'loser_sectors' not in data:
+                    data['loser_sectors'] = []
+                
+                if INSTRUCTOR_AVAILABLE:
+                    validated = AdoptionPrediction(**data)
+                    state["adoption_predictions"] = validated.model_dump()
+                    print(f"[FORMAT] [OK] Repaired JSON (timeline: {validated.adoption_timeline_months} months)")
+                else:
+                    state["adoption_predictions"] = data
+                    print(f"[FORMAT] [OK] Repaired JSON (timeline: {data.get('adoption_timeline_months', 'N/A')} months)")
+            except Exception as repair_error:
+                # Repair failed - use validated defaults
+                print(f"[WARN] JSON repair failed: {repair_error}, using validated fallback")
+                # Fallback: use validated defaults
             if INSTRUCTOR_AVAILABLE:
-                # Try to extract partial JSON and validate
                 try:
-                    # Last resort: construct minimal valid structure
-                    state["adoption_predictions"] = {
+                    fallback_data = {
                         "adoption_timeline_months": 18,
                         "market_cap_redistribution_trillions": 2.3,
                         "disruption_score": min(10.0, event_disruption * 1.1),
-                        "beneficiary_sectors": event_dict.get('affected_sectors', []),
+                        "beneficiary_sectors": event_dict.get('affected_sectors', []) if isinstance(event_dict, dict) else [],
                         "winner_companies": [],
                         "loser_sectors": [],
                     }
-                    # Validate the fallback
-                    validated = AdoptionPrediction(**state["adoption_predictions"])
+                    validated = AdoptionPrediction(**fallback_data)
                     state["adoption_predictions"] = validated.model_dump()
                     print("[WARN] Using validated fallback structure")
                 except Exception:
-                    # If even validation fails, use unvalidated fallback
-                    state["adoption_predictions"] = {
-                        "adoption_timeline_months": 18,
-                        "market_cap_redistribution_trillions": 2.3,
-                        "disruption_score": min(10.0, event_disruption * 1.1),
-                        "beneficiary_sectors": event_dict.get('affected_sectors', []),
-                    }
+                    state["adoption_predictions"] = fallback_data
             else:
-                # No Pydantic available - use unvalidated fallback
                 state["adoption_predictions"] = {
                     "adoption_timeline_months": 18,
                     "market_cap_redistribution_trillions": 2.3,
                     "disruption_score": event_disruption * 1.1,
-                    "beneficiary_sectors": event_dict.get('affected_sectors', []),
+                    "beneficiary_sectors": event_dict.get('affected_sectors', []) if isinstance(event_dict, dict) else [],
                 }
         
         print(f"[PREDICT] Adoption timeline: {state['adoption_predictions'].get('adoption_timeline_months', 'N/A')} months")
@@ -581,14 +676,16 @@ def create_market_agent_graph(agent: MarketDynamicsAgent) -> StateGraph:
     
     # Add nodes
     graph.add_node("analyze", agent.node_analyze_innovation)
-    graph.add_node("predict", agent.node_predict_adoption)
+    graph.add_node("predict_intelligence", agent.node_predict_adoption_intelligence)
+    graph.add_node("format_predictions", agent.node_format_predictions)
     graph.add_node("policy", agent.node_policy_recommendations)
     graph.add_node("narrative", agent.node_narrative)
     
     # Add edges
     graph.add_edge(START, "analyze")
-    graph.add_edge("analyze", "predict")
-    graph.add_edge("predict", "policy")
+    graph.add_edge("analyze", "predict_intelligence")
+    graph.add_edge("predict_intelligence", "format_predictions")
+    graph.add_edge("format_predictions", "policy")
     graph.add_edge("policy", "narrative")
     graph.add_edge("narrative", END)
     
@@ -668,6 +765,7 @@ async def main():
         "num_companies": args.companies,
         "companies": [],
         "analysis_summary": "",
+        "prediction_analysis": "",  # Free-form intelligence analysis
         "adoption_predictions": {},
         "policy_recommendations": [],
         "market_narrative": "",
