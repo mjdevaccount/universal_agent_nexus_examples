@@ -1,6 +1,6 @@
 """Demonstrate dynamic tool injection on top of the N-decision router."""
 
-from tools.universal_agent_tools import (
+from universal_agent_tools.patterns import (
     DynamicCSVToolInjector,
     RouteDefinition,
     build_decision_agent_manifest,

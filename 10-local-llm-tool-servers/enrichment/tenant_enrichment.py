@@ -1,6 +1,6 @@
 """Tenant-aware enrichment strategy backed by reusable toolkit primitives."""
 
-from tools.universal_agent_tools.enrichment import (
+from universal_agent_tools.patterns import (
     TenantIsolationHandler,
     VectorDBIsolationHandler,
     create_tenant_agent,

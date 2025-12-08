@@ -1,6 +1,6 @@
 """Nested scaffolding example using reusable toolkit primitives."""
 
-from tools.universal_agent_tools.scaffolding import (
+from universal_agent_tools.patterns import (
     OrganizationAgentFactory,
     build_organization_manifest as build_manifest,
 )

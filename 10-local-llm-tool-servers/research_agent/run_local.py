@@ -10,7 +10,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from universal_agent_nexus.adapters.langgraph import LangGraphRuntime, load_manifest
-from _lib.tools.universal_agent_tools.observability_helper import setup_observability, trace_runtime_execution
+from universal_agent_tools.observability import setup_observability, trace_runtime_execution
 
 
 async def start_mcp_servers() -> list[subprocess.Popen[bytes]]:

@@ -19,14 +19,14 @@ if sys.platform == 'win32':
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "08-local-agent-runtime" / "runtime"))
 
-from tools.registry.tool_registry import get_registry
+from universal_agent_nexus.runtime import get_registry
 from agent_runtime import MCPToolLoader, create_agent_graph, create_llm_with_tools
 from langchain_core.messages import HumanMessage
 
 # Try to import observability helper
 try:
     sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-    from _lib.tools.universal_agent_tools.observability_helper import setup_observability
+    from universal_agent_tools.observability import setup_observability
     OBSERVABILITY_AVAILABLE = True
 except ImportError:
     OBSERVABILITY_AVAILABLE = False

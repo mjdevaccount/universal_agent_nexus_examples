@@ -10,7 +10,7 @@ from universal_agent_nexus.ir import ToolIR
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT))
-from tools.universal_agent_tools import RouteDefinition, build_decision_agent_manifest  # noqa: E402
+from universal_agent_tools.patterns import RouteDefinition, build_decision_agent_manifest  # noqa: E402
 
 
 def write_manifest() -> None:

@@ -1,27 +1,38 @@
 """
-⚠️ DEPRECATED: This module has been moved to _lib/
+⚠️ DEPRECATED: This module has been deprecated.
 
-For backward compatibility, imports are redirected to _lib.
-Please update your imports to use _lib directly.
+Please update your imports to use the new package locations:
 
 Old: from shared import NexusRuntime
-New: from _lib.runtime import NexusRuntime
+New: from universal_agent_nexus.runtime import NexusRuntime
+
+Old: from shared import create_cache_fabric
+New: from universal_agent_nexus.cache_fabric import create_cache_fabric
+
+Old: from shared import get_parser
+New: from universal_agent_nexus.output_parsers import get_parser
+
+Old: from shared import setup_observability
+New: from universal_agent_tools.observability import setup_observability
 """
 
-import sys
-from pathlib import Path
+import warnings
 
-# Redirect imports to _lib
-_lib_path = Path(__file__).parent.parent / "_lib"
-if _lib_path.exists() and str(_lib_path) not in sys.path:
-    sys.path.insert(0, str(_lib_path.parent))
+warnings.warn(
+    "shared module is deprecated. "
+    "Please update imports to use universal_agent_nexus and universal_agent_tools packages directly. "
+    "See module docstring for migration guide.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
-# Re-export from _lib for backward compatibility
+# Re-export from new package locations
 try:
-    from _lib.runtime import NexusRuntime, StandardExample, ResultExtractor
-    from _lib.cache_fabric import CacheFabric, create_cache_fabric
-    from _lib.output_parsers import get_parser, OutputParser
-    from _lib.tools import ModelConfig, setup_observability
+    from universal_agent_nexus.runtime import NexusRuntime, StandardExample, ResultExtractor
+    from universal_agent_nexus.cache_fabric import CacheFabric, create_cache_fabric
+    from universal_agent_nexus.output_parsers import get_parser, OutputParser
+    from universal_agent_tools import ModelConfig
+    from universal_agent_tools.observability import setup_observability
     
     __all__ = [
         "NexusRuntime",
@@ -37,8 +48,8 @@ try:
 except ImportError as e:
     import warnings
     warnings.warn(
-        f"Failed to import from _lib: {e}. "
-        "Please update imports to use _lib directly.",
+        f"Failed to import from new packages: {e}. "
+        "Please update imports to use universal_agent_nexus and universal_agent_tools directly.",
         DeprecationWarning
     )
     __all__ = []

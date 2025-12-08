@@ -11,7 +11,7 @@ from pathlib import Path
 # Add tools registry to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from tools.registry.tool_registry import get_registry
+from universal_agent_nexus.runtime import get_registry
 import yaml
 
 

@@ -3,7 +3,7 @@
 import yaml
 from universal_agent_nexus.ir import ToolIR
 
-from tools.universal_agent_tools import RouteDefinition, build_decision_agent_manifest
+from universal_agent_tools.patterns import RouteDefinition, build_decision_agent_manifest
 
 
 def build_manifest():

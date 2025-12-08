@@ -24,12 +24,12 @@ from langchain_core.messages import HumanMessage
 from universal_agent_nexus.compiler import parse
 from universal_agent_nexus.ir.pass_manager import create_default_pass_manager, OptimizationLevel
 from universal_agent_nexus.adapters.langgraph import LangGraphRuntime
-from _lib.tools.universal_agent_tools.observability_helper import setup_observability, trace_runtime_execution
+from universal_agent_tools.observability import setup_observability, trace_runtime_execution
 
 # Optional: Cache Fabric integration
-# from _lib.cache_fabric.defaults import resolve_fabric_from_env
-# from _lib.cache_fabric.nexus_integration import store_manifest_contexts
-# from _lib.cache_fabric.runtime_integration import track_execution_with_fabric
+# from universal_agent_nexus.cache_fabric import resolve_fabric_from_env
+# from universal_agent_nexus.cache_fabric.nexus_integration import store_manifest_contexts
+# from universal_agent_nexus.cache_fabric.runtime_integration import track_execution_with_fabric
 
 
 async def main():

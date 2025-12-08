@@ -6,7 +6,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from universal_agent_nexus.ir import ToolIR
-from tools.universal_agent_tools import RouteDefinition, build_decision_agent_manifest
+from universal_agent_tools.patterns import RouteDefinition, build_decision_agent_manifest
 
 SYSTEM_MESSAGE = """
 Classify customer issue as:

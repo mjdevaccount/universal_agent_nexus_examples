@@ -7,7 +7,7 @@ from universal_agent_nexus.ir import ToolIR
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT))
-from tools.universal_agent_tools import (  # noqa: E402
+from universal_agent_tools.patterns import (  # noqa: E402
     ExecutionLog,
     SelfModifyingAgent,
     deterministic_tool_from_error,

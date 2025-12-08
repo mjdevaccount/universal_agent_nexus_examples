@@ -1,6 +1,6 @@
 """Dynamic CSV tool injection example using reusable toolkit primitives."""
 
-from tools.universal_agent_tools.dynamic_tools import DynamicCSVToolInjector
+from universal_agent_tools.patterns import DynamicCSVToolInjector
 
 __all__ = ["DynamicCSVToolInjector"]
 

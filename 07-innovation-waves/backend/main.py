@@ -22,7 +22,7 @@ from market_engine import MarketSimulator, CompanyType
 
 # Setup observability
 try:
-    from _lib.tools.universal_agent_tools.observability_helper import setup_observability
+    from universal_agent_tools.observability import setup_observability
     setup_observability("innovation-waves")
 except ImportError:
     pass

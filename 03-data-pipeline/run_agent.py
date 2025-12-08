@@ -7,7 +7,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from _lib.runtime import NexusRuntime, JSONExtractor
+from universal_agent_nexus.runtime import NexusRuntime, JSONExtractor
 
 
 async def main():

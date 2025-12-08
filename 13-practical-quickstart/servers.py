@@ -7,7 +7,7 @@ from typing import Dict
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from tools.universal_agent_tools import DictToolServer, ToolHandler
+from universal_agent_tools.patterns import DictToolServer, ToolHandler
 
 BILLING_DB: Dict[str, dict] = {
     "user123": {"balance": 100.0, "status": "active"},
