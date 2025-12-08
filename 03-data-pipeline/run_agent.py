@@ -227,14 +227,14 @@ async def main():
         model="qwen3:8b",
         base_url="http://localhost:11434",
         temperature=0.8,  # Creative reasoning
-        num_predict=500,
+        # num_predict removed - using model default prevents empty responses
     )
     
     llm_extraction = ChatOllama(
         model="qwen3:8b",
         base_url="http://localhost:11434",
         temperature=0.1,  # Deterministic extraction
-        num_predict=300,
+        # num_predict removed - using model default prevents empty responses
     )
     
     # Create workflow
@@ -281,14 +281,14 @@ async def main():
             result = await workflow.invoke(test_case["data"])
             results.append(result)
             
-            print(f"  ✅ Sentiment: {result['sentiment'].upper()}")
-            print(f"  ✅ Category: {result['category'].upper()}")
-            print(f"  ✅ Entities: {', '.join(result['entities']) or 'None detected'}")
-            print(f"  ✅ Confidence: {result['confidence']:.1%}")
-            print(f"  ✅ Insights: {result['key_insights'][:50]}...")
-            print(f"  ✅ Duration: {result['metrics']['total_duration_ms']:.0f}ms\n")
+            print(f"  [OK] Sentiment: {result['sentiment'].upper()}")
+            print(f"  [OK] Category: {result['category'].upper()}")
+            print(f"  [OK] Entities: {', '.join(result['entities']) or 'None detected'}")
+            print(f"  [OK] Confidence: {result['confidence']:.1%}")
+            print(f"  [OK] Insights: {result['key_insights'][:50]}...")
+            print(f"  [OK] Duration: {result['metrics']['total_duration_ms']:.0f}ms\n")
         except Exception as e:
-            print(f"  ❌ Error: {e}\n")
+            print(f"  [ERROR] Error: {e}\n")
             results.append({"error": str(e)})
     
     # Summary
@@ -298,9 +298,9 @@ async def main():
     successful = sum(1 for r in results if "error" not in r)
     print(f"Successful: {successful}/{len(results)}")
     print(f"Success Rate: {100*successful/len(results):.1f}%")
-    print(f"\n✅ All nodes executed successfully")
-    print(f"✅ No parsing errors (IEV pattern reliability)")
-    print(f"✅ Full observability with metrics\n")
+    print(f"\n[OK] All nodes executed successfully")
+    print(f"[OK] No parsing errors (IEV pattern reliability)")
+    print(f"[OK] Full observability with metrics\n")
 
 
 if __name__ == "__main__":
