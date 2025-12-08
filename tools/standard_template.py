@@ -1,4 +1,17 @@
-"""Run the hello-world agent using LangGraphRuntime with v3.0.1 patterns."""
+"""Standard template for Universal Agent Nexus examples.
+
+This template follows the v3.0.1 standard pattern used across examples 01-05, 11-13, 15.
+Copy this file to your example directory and customize as needed.
+
+Usage:
+1. Copy this file to <example-number>-<name>/run_agent.py
+2. Update the service name in setup_observability()
+3. Update the graph_name in runtime.initialize()
+4. Customize input_data for your use case
+5. Customize result extraction for your output format
+6. Add manifest.yaml with your graph definition
+7. Add requirements.txt with dependencies
+"""
 
 import asyncio
 import sys
@@ -13,10 +26,20 @@ from universal_agent_nexus.ir.pass_manager import create_default_pass_manager, O
 from universal_agent_nexus.adapters.langgraph import LangGraphRuntime
 from universal_agent_tools.observability_helper import setup_observability, trace_runtime_execution
 
+# Optional: Cache Fabric integration
+# from shared.cache_fabric import resolve_fabric_from_env
+# from shared.cache_fabric.nexus_integration import store_manifest_contexts
+# from shared.cache_fabric.runtime_integration import track_execution_with_fabric
+
 
 async def main():
     # Setup observability
-    obs_enabled = setup_observability("hello-world")
+    obs_enabled = setup_observability("<service-name>")
+    
+    # Optional: Setup Cache Fabric
+    # fabric, fabric_meta = resolve_fabric_from_env()
+    # backend = fabric_meta["backend"]
+    # print(f"Using {backend} backend for Cache Fabric")
     
     # Use proper Nexus compiler pipeline: parse → optimize → execute
     manifest_path = Path(__file__).parent / "manifest.yaml"
@@ -33,34 +56,45 @@ async def main():
         total_time = sum(s.elapsed_ms for s in stats.values())
         print(f"✅ Applied {len(stats)} passes in {total_time:.2f}ms")
     
+    # Optional: Store manifest contexts in Cache Fabric
+    # await store_manifest_contexts(ir_optimized, fabric, manifest_id="<manifest-id>")
+    
     runtime = LangGraphRuntime(
         postgres_url=None,
         enable_checkpointing=False,
     )
-    await runtime.initialize(ir_optimized, graph_name="main")
-
-    # v3.0.0 uses MessagesState - provide input as messages
-    # The task node prompt uses {name}, so we'll provide it in the message content
-    # and also in the state for template variable access
+    await runtime.initialize(ir_optimized, graph_name="<graph_name>")
+    
+    # Prepare input data (MessagesState format for v3.0.0+)
     input_data = {
         "messages": [
-            HumanMessage(content="Generate a greeting for World")
+            HumanMessage(content="<your input here>")
         ],
-        "name": "World",  # Provide as state variable for prompt template {name}
+        # Add any additional state variables your graph needs
+        # "variable_name": "value",
     }
-
+    
     # Execute with tracing
+    execution_id = "<execution-id>"
     if obs_enabled:
-        async with trace_runtime_execution("hello-001", graph_name="main"):
+        async with trace_runtime_execution(execution_id, graph_name="<graph_name>"):
             result = await runtime.execute(
-                execution_id="hello-001",
+                execution_id=execution_id,
                 input_data=input_data,
             )
     else:
         result = await runtime.execute(
-            execution_id="hello-001",
+            execution_id=execution_id,
             input_data=input_data,
         )
+    
+    # Optional: Track execution in Cache Fabric
+    # await track_execution_with_fabric(
+    #     execution_id=execution_id,
+    #     graph_name="<graph_name>",
+    #     result=result,
+    #     fabric=fabric,
+    # )
     
     # Extract results from messages (v3.0.0 MessagesState format)
     # Result structure: {'node_id': {'messages': [...]}} or {'messages': [...]}
@@ -73,18 +107,18 @@ async def main():
         node_result = result.get(last_node, {})
         messages = node_result.get("messages", [])
     
-    print(f"\n✅ Hello World Complete")
+    print(f"\n✅ <Example Name> Complete")
     print(f"📝 Execution Path: {' → '.join(executed_nodes)}")
     
+    # Extract and display results
     if messages:
-        # Get the greeting from the last message
+        # Get the result from the last message
         last_message = messages[-1]
-        greeting = getattr(last_message, "content", "unknown")
-        print(f"💬 Greeting: {greeting}")
+        content = getattr(last_message, "content", "unknown")
+        print(f"💬 Result: {content}")
     else:
-        # Fallback: check for greeting in result
-        greeting = result.get("greeting", result)
-        print(f"💬 Greeting: {greeting}")
+        # Fallback: show raw result
+        print(f"✅ Result: {result}")
 
 
 if __name__ == "__main__":

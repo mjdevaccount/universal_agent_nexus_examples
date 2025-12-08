@@ -29,6 +29,12 @@ nexus compile manifest.yaml --target langgraph --output agent.py
 python agent.py
 ```
 
+### 🔄 **Command Conventions**
+
+- [EXAMPLES_COMMAND_CONVENTIONS.md](EXAMPLES_COMMAND_CONVENTIONS.md) documents the standard compile/run/test/serve commands used across every example.
+- [NEXUS_PIPELINE_MATRIX.md](NEXUS_PIPELINE_MATRIX.md) shows the design → compile → runtime → Cache Fabric coverage for each example.
+- Run `python tools/example_runner.py list` to see the canonical commands for each example, `python tools/example_runner.py show <id>` for details, or `python tools/example_runner.py matrix` for the standardized pipeline view.
+
 ---
 
 ## 📚 **Examples**
