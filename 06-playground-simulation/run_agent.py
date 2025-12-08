@@ -214,14 +214,14 @@ async def main():
         model="qwen3:8b",
         base_url="http://localhost:11434",
         temperature=0.7,  # Balanced for decision-making
-        num_predict=512,
+        # num_predict removed - using model default prevents empty responses
     )
-    print("      ✓ Ollama model loaded: qwen3:8b\n")
+    print("      [OK] Ollama model loaded: qwen3:8b\n")
     
     # 2. Create tools
     print("[2/4] Creating simulation tools...")
     tools = create_simulation_tools()
-    print(f"      ✓ {len(tools)} tools available:")
+    print(f"      [OK] {len(tools)} tools available:")
     for tool in tools:
         print(f"        - {tool.name}")
     print()
@@ -235,7 +235,7 @@ async def main():
         max_iterations=10,
         timeout_seconds=60,
     )
-    print("      ✓ Workflow created\n")
+    print("      [OK] Workflow created\n")
     
     # 4. Run simulation
     print("[4/4] Running simulation via tool-calling loop...\n")
@@ -272,7 +272,7 @@ async def main():
     print(f"Iterations: {result['iterations']}\n")
     
     for i, call in enumerate(result["tool_calls"], 1):
-        status = "✓" if call.success else "✗"
+        status = "[OK]" if call.success else "[FAIL]"
         print(f"{i}. {status} {call.tool_name}")
         if call.tool_input:
             inputs = ", ".join(f"{k}={v}" for k, v in call.tool_input.items())
@@ -301,7 +301,7 @@ async def main():
             print(f"  - {error}")
     
     print("\n" + "=" * 80)
-    print("✓ Example 06 Complete!")
+    print("[OK] Example 06 Complete!")
     print("=" * 80 + "\n")
 
 
