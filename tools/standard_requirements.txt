@@ -1,0 +1,22 @@
+# Standard requirements for Universal Agent Nexus examples
+# Copy this to your example directory as requirements.txt
+
+# Core Nexus compiler and runtime
+universal-agent-nexus[langgraph]>=3.0.1
+
+# LangChain core (for MessagesState and message types)
+langchain-core
+
+# YAML parsing (for manifest.yaml)
+pyyaml
+
+# Optional: Cache Fabric backends (uncomment as needed)
+# redis[async]  # For RedisFabric
+# qdrant-client  # For VectorFabric
+# sentence-transformers  # For VectorFabric embedding function
+
+# Optional: Observability (usually included in universal-agent-nexus)
+# opentelemetry-api
+# opentelemetry-sdk
+# opentelemetry-exporter-otlp
+
