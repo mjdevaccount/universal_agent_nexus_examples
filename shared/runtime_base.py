@@ -101,27 +101,39 @@ class JSONExtractor(ResultExtractor):
         import json
         import re
         
-        last_content = base.get("last_content", "")
-        
-        # Try to find JSON in content
-        if "{" in last_content:
-            try:
-                json_start = last_content.find("{")
-                json_end = last_content.rfind("}") + 1
-                if json_end > json_start:
-                    json_str = last_content[json_start:json_end]
-                    # Normalize whitespace
-                    json_str = re.sub(r'\s+', ' ', json_str.strip())
-                    parsed = json.loads(json_str)
-                    base["parsed_json"] = parsed
-            except (json.JSONDecodeError, ValueError):
-                # Try ast.literal_eval as fallback
+        # Search all messages for JSON, not just last
+        messages = base.get("messages", [])
+        for msg in messages:
+            if hasattr(msg, "content"):
+                content = str(msg.content)
+            elif isinstance(msg, dict) and "content" in msg:
+                content = str(msg["content"])
+            else:
+                continue
+            
+            # Try to find JSON in content
+            if "{" in content:
                 try:
-                    import ast
-                    dict_str = last_content[json_start:json_end]
-                    base["parsed_json"] = ast.literal_eval(dict_str)
-                except:
-                    pass
+                    json_start = content.find("{")
+                    json_end = content.rfind("}") + 1
+                    if json_end > json_start:
+                        json_str = content[json_start:json_end]
+                        # Normalize whitespace
+                        json_str = re.sub(r'\s+', ' ', json_str.strip())
+                        parsed = json.loads(json_str)
+                        base["parsed_json"] = parsed
+                        base["json_source"] = content  # Keep original for context
+                        break
+                except (json.JSONDecodeError, ValueError):
+                    # Try ast.literal_eval as fallback
+                    try:
+                        import ast
+                        dict_str = content[json_start:json_end]
+                        base["parsed_json"] = ast.literal_eval(dict_str)
+                        base["json_source"] = content
+                        break
+                    except:
+                        pass
         
         return base
 
