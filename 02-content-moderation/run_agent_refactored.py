@@ -17,6 +17,7 @@ Code Reduction:
 
 import asyncio
 import json
+import sys
 from pathlib import Path
 from typing import TypedDict, Any, Dict
 from datetime import datetime
@@ -260,5 +261,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    import sys
     asyncio.run(main())
