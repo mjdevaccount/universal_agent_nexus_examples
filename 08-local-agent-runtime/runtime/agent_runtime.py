@@ -199,8 +199,8 @@ def main():
     
     # 1. Load tools from MCP servers (auto-discovery)
     print("\n1. Loading tools from MCP servers...")
-    filesystem_tools = MCPToolLoader.load_from_server("http://localhost:8000/mcp")
-    git_tools = MCPToolLoader.load_from_server("http://localhost:8001/mcp")
+    filesystem_tools = MCPToolLoader.load_from_server("http://localhost:8144/mcp")
+    git_tools = MCPToolLoader.load_from_server("http://localhost:8145/mcp")
     all_tools = filesystem_tools + git_tools
     
     print(f"   [OK] Loaded {len(all_tools)} tools:")

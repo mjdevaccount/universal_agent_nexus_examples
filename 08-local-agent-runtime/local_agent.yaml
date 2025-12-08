@@ -53,7 +53,7 @@ tools:
     protocol: "mcp"
     mcp_server: "filesystem"
     config:
-      server_url: "http://localhost:8000/mcp"
+      server_url: "http://localhost:8144/mcp"
       tool_name: "read_file"
       input_schema:
         type: object
@@ -68,7 +68,7 @@ tools:
     protocol: "mcp"
     mcp_server: "filesystem"
     config:
-      server_url: "http://localhost:8000/mcp"
+      server_url: "http://localhost:8144/mcp"
       tool_name: "write_file"
       input_schema:
         type: object
@@ -86,7 +86,7 @@ tools:
     protocol: "mcp"
     mcp_server: "filesystem"
     config:
-      server_url: "http://localhost:8000/mcp"
+      server_url: "http://localhost:8144/mcp"
       tool_name: "list_directory"
       input_schema:
         type: object
@@ -101,7 +101,7 @@ tools:
     protocol: "mcp"
     mcp_server: "git"
     config:
-      server_url: "http://localhost:8001/mcp"
+      server_url: "http://localhost:8145/mcp"
       tool_name: "git_status"
       input_schema:
         type: object
@@ -116,7 +116,7 @@ tools:
     protocol: "mcp"
     mcp_server: "filesystem"
     config:
-      server_url: "http://localhost:8000/mcp"
+      server_url: "http://localhost:8144/mcp"
       tool_name: "search_code"
       input_schema:
         type: object

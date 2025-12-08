@@ -22,6 +22,10 @@ Ollama LLM (function calling)
 
 ## 🚀 Quick Start (5 Minutes)
 
+### December 2025 Pattern: No Manual Server Management
+
+**All MCP servers are managed automatically. No leftover processes, no port conflicts.**
+
 ### 1. Install Dependencies
 
 ```bash
@@ -29,39 +33,41 @@ cd 08-local-agent-runtime
 pip install -r backend/requirements.txt
 
 # Or install individually:
-pip install langgraph langchain langchain-core langchain-ollama httpx fastapi uvicorn pyyaml
+pip install langgraph langchain langchain-core langchain-ollama httpx fastapi uvicorn pyyaml pytest
 ```
 
-### 2. Start MCP Servers
-
-**Terminal 1: Filesystem Server**
-```bash
-python mcp_servers/filesystem/server.py
-# Runs on http://localhost:8000
-```
-
-**Terminal 2: Git Server**
-```bash
-python mcp_servers/git/server.py
-# Runs on http://localhost:8001
-```
-
-### 3. Pull Ollama Model
+### 2. Pull Ollama Model
 
 ```bash
-ollama pull llama3.2:11b
-# Or use: gemma:2b-instruct, qwen2.5:7b
+ollama pull qwen3:8b
+# Or use: gemma:2b-instruct, llama3.2:11b
 ```
 
-### 4. Run Agent
+### 3. Run Example (Single Command)
 
+**Mode B - Demo/Example Run:**
 ```bash
-# Option 1: Direct runtime
-python runtime/agent_runtime.py
-
-# Option 2: Compile from Fabric YAML (demonstrates compiler)
-python backend/compiler_bridge.py
+python run_example.py
 ```
+
+This single command:
+- ✅ Starts MCP servers automatically (ports 8344, 8345)
+- ✅ Runs the example
+- ✅ Stops all servers on exit (automatic cleanup)
+- ✅ No leftover processes
+
+### 4. Run Tests (Automatic Server Management)
+
+**Mode A - Unit/Integration Tests:**
+```bash
+pytest test_runtime_fixed.py -v
+```
+
+Tests use pytest fixtures that:
+- ✅ Start servers automatically (ports 8244, 8245)
+- ✅ Clean up after each test
+- ✅ No port conflicts with demo mode
+- ✅ No manual server management needed
 
 ---
 

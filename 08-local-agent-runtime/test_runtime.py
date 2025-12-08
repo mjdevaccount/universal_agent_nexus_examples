@@ -26,7 +26,7 @@ def test_mcp_servers():
         
         # Test filesystem server (optional)
         try:
-            response = httpx.get("http://localhost:8000/mcp/tools", timeout=2)
+            response = httpx.get("http://localhost:8144/mcp/tools", timeout=2)
             if response.status_code == 200:
                 tools = response.json()
                 print(f"   [OK] Filesystem server: {len(tools.get('tools', []))} tools")
@@ -36,7 +36,7 @@ def test_mcp_servers():
             print(f"   [SKIP] Filesystem server not running (optional)")
         
         # Test git server
-        response = httpx.get("http://localhost:8001/mcp/tools", timeout=2)
+        response = httpx.get("http://localhost:8145/mcp/tools", timeout=2)
         if response.status_code == 200:
             tools = response.json()
             print(f"   [OK] Git server: {len(tools.get('tools', []))} tools")
@@ -57,9 +57,9 @@ def test_tool_loading():
     
     try:
         # Try filesystem server (may not be running)
-        filesystem_tools = MCPToolLoader.load_from_server("http://localhost:8000/mcp")
+        filesystem_tools = MCPToolLoader.load_from_server("http://localhost:8144/mcp")
         # Git server (should be running)
-        git_tools = MCPToolLoader.load_from_server("http://localhost:8001/mcp")
+        git_tools = MCPToolLoader.load_from_server("http://localhost:8145/mcp")
         all_tools = filesystem_tools + git_tools
         
         if not all_tools:
