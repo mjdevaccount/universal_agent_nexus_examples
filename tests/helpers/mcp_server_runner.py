@@ -290,43 +290,73 @@ def run_mcp_servers_for_example(
             if not ensure_port_free(port, kill_if_in_use=True):
                 raise RuntimeError(f"Port {port} is still in use for {name} server")
             
+            # Determine working directory
+            repo_root = Path(__file__).parent.parent.parent
+            example_dir = repo_root / "08-local-agent-runtime"
+            
             # Start server
             cmd = [
                 sys.executable, "-m", "uvicorn",
                 module,
-                "--host", "0.0.0.0",
+                "--host", "127.0.0.1",  # Use 127.0.0.1 for Windows compatibility
                 "--port", str(port)
             ]
             
             print(f"[MCP] Starting {name} server on port {port}...")
+            print(f"[MCP] Module: {module}, CWD: {example_dir}")
+            
             process = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                cwd=Path(__file__).parent.parent.parent
+                stderr=subprocess.STDOUT,
+                cwd=example_dir if example_dir.exists() else repo_root,
+                shell=sys.platform == 'win32',
+                text=True
             )
             processes.append((process, port, name))
             server_urls[name] = f"http://localhost:{port}/mcp"
+            
+            # Give process a moment to start
+            time.sleep(2)
         
         # Wait for all servers to be ready
         print("[MCP] Waiting for servers to be ready...")
-        max_wait = 15
+        max_wait = 20
         for attempt in range(max_wait):
             all_ready = True
+            server_status = {}
+            
             for process, port, name in processes:
+                # Check if process died
                 if process.poll() is not None:
-                    stdout, stderr = process.communicate()
-                    raise RuntimeError(
-                        f"Server {name} failed to start:\n"
-                        f"STDOUT: {stdout.decode()}\n"
-                        f"STDERR: {stderr.decode()}"
-                    )
+                    # Try to read output (non-blocking)
+                    try:
+                        stdout_lines = []
+                        while True:
+                            line = process.stdout.readline()
+                            if not line:
+                                break
+                            stdout_lines.append(line.strip())
+                        output = '\n'.join(stdout_lines)
+                    except Exception:
+                        output = "Could not read output"
+                    
+                    error_msg = f"Server {name} failed to start (exit code: {process.returncode}):\n{output}"
+                    raise RuntimeError(error_msg)
                 
+                # Check health endpoint
                 try:
-                    response = httpx.get(f"http://localhost:{port}/health", timeout=1)
-                    if response.status_code != 200:
+                    response = httpx.get(f"http://localhost:{port}/health", timeout=2)
+                    if response.status_code == 200:
+                        server_status[name] = "ready"
+                    else:
+                        server_status[name] = f"health check failed: {response.status_code}"
                         all_ready = False
-                except Exception:
+                except httpx.ConnectError:
+                    server_status[name] = "not responding"
+                    all_ready = False
+                except Exception as e:
+                    server_status[name] = f"error: {str(e)}"
                     all_ready = False
             
             if all_ready:
@@ -334,9 +364,19 @@ def run_mcp_servers_for_example(
                 yield server_urls
                 return
             
+            # Show status every 5 seconds
+            if attempt % 5 == 0 and attempt > 0:
+                print(f"[MCP] Waiting... Status: {server_status}")
+            
             time.sleep(1)
         
-        raise RuntimeError(f"Servers did not become ready within {max_wait} seconds")
+        # Final status check
+        print(f"[MCP] Final status: {server_status}")
+        raise RuntimeError(
+            f"Servers did not become ready within {max_wait} seconds.\n"
+            f"Status: {server_status}\n"
+            f"Check server logs above for errors."
+        )
         
     finally:
         # Cleanup: stop all servers
