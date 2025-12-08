@@ -84,7 +84,7 @@ class AutonomousWorkflow(Workflow):
         executor = ExtractionNode(
             llm=llm_extraction,
             prompt_template=(
-                "Simulate execution of this plan:\n{plan}\n\n"
+                "Simulate execution of this plan:\n{analysis}\n\n"
                 "Return JSON with: completed_steps, success_rate, "
                 "issues_encountered, next_actions."
             ),
@@ -130,19 +130,19 @@ class AutonomousWorkflow(Workflow):
             state = {"objective": current_objective}
             
             # Plan
-            for node in self.nodes:
+            for node in self.nodes.values():
                 if node.name == "plan_generator":
                     state = await node.execute(state)
                     break
             
             # Execute
-            for node in self.nodes:
+            for node in self.nodes.values():
                 if node.name == "execution_simulator":
                     state = await node.execute(state)
                     break
             
             # Reflect
-            for node in self.nodes:
+            for node in self.nodes.values():
                 if node.name == "reflection_validator":
                     state = await node.execute(state)
                     break
@@ -182,13 +182,13 @@ async def main():
         model="qwen3:8b",
         base_url="http://localhost:11434",
         temperature=0.8,  # Creative reasoning
-        num_predict=400,
+        # num_predict removed - using model default prevents empty responses
     )
     llm_extraction = ChatOllama(
         model="qwen3:8b",
         base_url="http://localhost:11434",
         temperature=0.1,  # Deterministic extraction
-        num_predict=300,
+        # num_predict removed - using model default prevents empty responses
     )
     
     workflow = AutonomousWorkflow(llm_reasoning, llm_extraction)
