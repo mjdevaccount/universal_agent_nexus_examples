@@ -5,8 +5,8 @@ Example 13: Practical quickstart with SimpleQAWorkflow
 """
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock
-from dataclasses import dataclass
+from unittest.mock import AsyncMock, MagicMock, Mock
+from dataclasses import dataclass, asdict
 
 from shared.workflows import ConditionalWorkflow, SimpleQAWorkflow, IntelligenceNode, BaseNode
 
@@ -33,15 +33,23 @@ class MockTaskAnalyzer(IntelligenceNode):
     """Mock task analyzer for testing."""
     
     def __init__(self, llm):
-        self.llm = llm
-        self.prompt_template = ""
-        self.metrics = {"calls": 0}
+        super().__init__(
+            llm=llm,
+            prompt_template="",
+            name="mock_task_analyzer",
+            description="Mock task analyzer"
+        )
+        self._call_count = 0
     
-    async def execute(self, state: MockTaskState) -> str:
+    async def execute(self, state) -> dict:
         """Analyze and classify task."""
-        self.metrics["calls"] += 1
+        self._call_count += 1
         
-        text = state.task_description.lower()
+        # Handle both dict and dataclass
+        if isinstance(state, dict):
+            text = state.get("task_description", "").lower()
+        else:
+            text = state.task_description.lower()
         
         # Simple keyword-based classification
         if any(word in text for word in ["design", "create", "plan", "evaluate"]):
@@ -51,49 +59,94 @@ class MockTaskAnalyzer(IntelligenceNode):
         else:
             complexity = "simple"
         
-        state.complexity_level = complexity
-        return complexity
+        # Update state (handle both dict and dataclass)
+        if isinstance(state, dict):
+            state["complexity_level"] = complexity
+            state["decision"] = complexity
+        else:
+            state.complexity_level = complexity
+        
+        # Return dict for ConditionalWorkflow
+        if isinstance(state, dict):
+            return state
+        else:
+            result = asdict(state) if hasattr(state, "__dict__") else {"complexity_level": complexity, "decision": complexity}
+            return result
     
-    def validate_input(self, state: MockTaskState) -> bool:
+    def validate_input(self, state) -> bool:
+        if isinstance(state, dict):
+            return state.get("task_description") is not None
         return state.task_description is not None
 
 
 class MockSimpleExecutor(BaseNode):
     """Mock simple executor."""
-    async def execute(self, state: MockTaskState) -> MockTaskState:
-        state.result = f"Simple solution for: {state.task_description}"
-        state.execution_steps.append("execution")
+    def __init__(self):
+        super().__init__(name="mock_simple_executor", description="Mock simple executor")
+    
+    async def execute(self, state) -> dict:
+        # Handle both dict and dataclass
+        if isinstance(state, dict):
+            task_desc = state.get("task_description", "")
+            state["result"] = f"Simple solution for: {task_desc}"
+            if "execution_steps" not in state:
+                state["execution_steps"] = []
+            state["execution_steps"].append("execution")
+        else:
+            state.result = f"Simple solution for: {state.task_description}"
+            state.execution_steps.append("execution")
+            state = asdict(state)
         return state
     
-    def validate_input(self, state: MockTaskState) -> bool:
+    def validate_input(self, state) -> bool:
         return True
 
 
 class MockComplexExecutor(BaseNode):
     """Mock complex executor."""
-    async def execute(self, state: MockTaskState) -> MockTaskState:
-        state.execution_steps.append("breakdown")
-        state.execution_steps.append("execution")
-        state.execution_steps.append("verification")
-        state.result = f"Complex solution with steps for: {state.task_description}"
+    def __init__(self):
+        super().__init__(name="mock_complex_executor", description="Mock complex executor")
+    
+    async def execute(self, state) -> dict:
+        # Handle both dict and dataclass
+        if isinstance(state, dict):
+            task_desc = state.get("task_description", "")
+            if "execution_steps" not in state:
+                state["execution_steps"] = []
+            state["execution_steps"].extend(["breakdown", "execution", "verification"])
+            state["result"] = f"Complex solution with steps for: {task_desc}"
+        else:
+            state.execution_steps.extend(["breakdown", "execution", "verification"])
+            state.result = f"Complex solution with steps for: {state.task_description}"
+            state = asdict(state)
         return state
     
-    def validate_input(self, state: MockTaskState) -> bool:
+    def validate_input(self, state) -> bool:
         return True
 
 
 class MockAdaptiveExecutor(BaseNode):
     """Mock adaptive executor."""
-    async def execute(self, state: MockTaskState) -> MockTaskState:
-        state.execution_steps.append("planning")
-        state.execution_steps.append("review")
-        state.execution_steps.append("adaptation")
-        state.execution_steps.append("execution")
-        state.adaptations_made = 1
-        state.result = f"Adaptive solution with self-modification for: {state.task_description}"
+    def __init__(self):
+        super().__init__(name="mock_adaptive_executor", description="Mock adaptive executor")
+    
+    async def execute(self, state) -> dict:
+        # Handle both dict and dataclass
+        if isinstance(state, dict):
+            task_desc = state.get("task_description", "")
+            if "execution_steps" not in state:
+                state["execution_steps"] = []
+            state["execution_steps"].extend(["planning", "review", "adaptation", "execution"])
+            state["adaptations_made"] = 1
+            state["result"] = f"Adaptive solution with self-modification for: {task_desc}"
+        else:
+            state.execution_steps.extend(["planning", "review", "adaptation", "execution"])
+            state.adaptations_made = 1
+            state.result = f"Adaptive solution with self-modification for: {state.task_description}"
+            state = asdict(state)
         return state
     
-    def validate_input(self, state: MockTaskState) -> bool:
+    def validate_input(self, state) -> bool:
         return True
 
 
@@ -106,7 +159,8 @@ async def test_example_12_simple_task_classification():
     state = MockTaskState(task_description="What is 2 + 2?")
     result = await analyzer.execute(state)
     
-    assert result == "simple"
+    # Result is now a dict
+    assert result.get("decision") == "simple" or result.get("complexity_level") == "simple"
     assert state.complexity_level == "simple"
 
 
@@ -119,7 +173,8 @@ async def test_example_12_complex_task_classification():
     state = MockTaskState(task_description="Explain how photosynthesis works with detailed breakdown.")
     result = await analyzer.execute(state)
     
-    assert result == "complex"
+    # Result is now a dict
+    assert result.get("decision") == "complex" or result.get("complexity_level") == "complex"
 
 
 @pytest.mark.asyncio
@@ -131,7 +186,8 @@ async def test_example_12_adaptive_task_classification():
     state = MockTaskState(task_description="Design a system and evaluate potential improvements.")
     result = await analyzer.execute(state)
     
-    assert result == "adaptive"
+    # Result is now a dict
+    assert result.get("decision") == "adaptive" or result.get("complexity_level") == "adaptive"
 
 
 @pytest.mark.asyncio
@@ -142,8 +198,9 @@ async def test_example_12_simple_executor():
     
     result = await executor.execute(state)
     
-    assert result.result is not None
-    assert "Quick math problem" in result.result
+    # Result is now a dict
+    assert result.get("result") is not None
+    assert "Quick math problem" in result.get("result", "")
 
 
 @pytest.mark.asyncio
@@ -154,9 +211,10 @@ async def test_example_12_complex_executor():
     
     result = await executor.execute(state)
     
-    assert len(result.execution_steps) == 3
-    assert "breakdown" in result.execution_steps
-    assert "verification" in result.execution_steps
+    # Result is now a dict
+    assert len(result.get("execution_steps", [])) == 3
+    assert "breakdown" in result.get("execution_steps", [])
+    assert "verification" in result.get("execution_steps", [])
 
 
 @pytest.mark.asyncio
@@ -167,8 +225,9 @@ async def test_example_12_adaptive_executor():
     
     result = await executor.execute(state)
     
-    assert result.adaptations_made > 0
-    assert "adaptation" in result.execution_steps
+    # Result is now a dict
+    assert result.get("adaptations_made", 0) > 0
+    assert "adaptation" in result.get("execution_steps", [])
 
 
 @pytest.mark.asyncio
@@ -190,12 +249,14 @@ async def test_example_12_workflow_routing():
         branches=branches,
     )
     
-    # Test simple routing
-    state = MockTaskState(task_description="What is 2 + 2?")
-    result = await workflow.invoke(state)
+    # Test simple routing - convert dataclass to dict for workflow
+    state_dict = asdict(MockTaskState(task_description="What is 2 + 2?"))
+    result = await workflow.invoke(state_dict)
     
-    assert result.complexity_level == "simple"
-    assert result.result is not None
+    # ConditionalWorkflow returns a dict with "state" key
+    result_state = result.get("state", result)
+    assert result_state.get("complexity_level") == "simple"
+    assert result_state.get("result") is not None
 
 
 # ============================================================================
@@ -283,7 +344,8 @@ async def test_example_13_multiple_questions():
 async def test_example_13_system_prompt_usage():
     """Test that system prompt is used."""
     llm = AsyncMock()
-    llm.ainvoke = AsyncMock(return_value=MagicMock(
+    # SimpleQAWorkflow uses asyncio.to_thread(self.llm.invoke, ...)
+    llm.invoke = Mock(return_value=MagicMock(
         content="Python expert response."
     ))
     
@@ -296,7 +358,7 @@ async def test_example_13_system_prompt_usage():
     result = await workflow.invoke("What are decorators?")
     
     # Verify LLM was called
-    assert llm.ainvoke.called
+    assert llm.invoke.called
 
 
 @pytest.mark.asyncio

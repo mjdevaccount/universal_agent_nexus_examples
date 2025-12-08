@@ -4,7 +4,7 @@ Tests the ToolCallingWorkflow with multiple tool types and error scenarios.
 """
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 from langchain.tools import Tool
 from shared.workflows import ToolCallingWorkflow
 
@@ -63,6 +63,10 @@ def mock_llm():
     """Create mock LLM."""
     llm = AsyncMock()
     llm.invoke = AsyncMock()
+    # Add bind_tools method that returns a mock with invoke
+    bound_llm = AsyncMock()
+    bound_llm.invoke = AsyncMock()
+    llm.bind_tools = Mock(return_value=bound_llm)
     return llm
 
 
@@ -129,11 +133,11 @@ async def test_multiple_tool_calls(mock_llm, mock_tools):
     responses = [
         MagicMock(
             content="Let me calculate first",
-            tool_calls=[MagicMock(name="arithmetic", args={"expression": "10+5"})],
+            tool_calls=[{"name": "arithmetic", "args": {"expression": "10+5"}, "id": "call_1"}],
         ),
         MagicMock(
             content="Now let me search for more info",
-            tool_calls=[MagicMock(name="web_search", args={"query": "math"})],
+            tool_calls=[{"name": "web_search", "args": {"query": "math"}, "id": "call_2"}],
         ),
         MagicMock(
             content="Here's the final answer: 15 and math info",
@@ -141,13 +145,14 @@ async def test_multiple_tool_calls(mock_llm, mock_tools):
         ),
     ]
     
-    mock_llm.invoke = AsyncMock(side_effect=responses)
+    # Use the bound_llm from bind_tools
+    workflow.llm_with_tools.invoke = AsyncMock(side_effect=responses)
     
     result = await workflow.invoke("Calculate 10 + 5 and search for math info")
     
     assert result is not None
     # Should have executed multiple iterations
-    assert mock_llm.invoke.call_count >= 1
+    assert workflow.llm_with_tools.invoke.call_count >= 1
 
 
 # ============================================================================

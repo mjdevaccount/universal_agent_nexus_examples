@@ -16,7 +16,7 @@ from typing import Any, Dict, List
 from unittest.mock import Mock, AsyncMock, patch
 
 from langchain_core.tools import Tool
-from langchain_core.language_model import BaseLanguageModel
+from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import AIMessage, ToolMessage
 
 from shared.workflows import (
@@ -37,6 +37,10 @@ from shared.workflows import (
 def mock_llm():
     """Create a mock LLM."""
     llm = Mock(spec=BaseLanguageModel)
+    # Add bind_tools method that returns a mock with invoke
+    bound_llm = Mock()
+    bound_llm.invoke = AsyncMock()
+    llm.bind_tools = Mock(return_value=bound_llm)
     return llm
 
 

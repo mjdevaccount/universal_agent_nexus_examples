@@ -79,11 +79,13 @@ async def test_safe_content_validation():
     )
     
     state = {
-        "text": "normal content",
-        "severity": TestSeverity.SAFE,
-        "score": 0.3,
-        "is_safe": True,
-        "issues": [],
+        "extracted": {
+            "text": "normal content",
+            "severity": TestSeverity.SAFE,
+            "score": 0.3,
+            "is_safe": True,
+            "issues": [],
+        }
     }
     
     result = await node.execute(state)
@@ -102,11 +104,13 @@ async def test_unsafe_content_detection():
     )
     
     state = {
-        "text": "harmful content",
-        "severity": TestSeverity.UNSAFE,
-        "score": 0.9,
-        "is_safe": False,
-        "issues": ["harmful"],
+        "extracted": {
+            "text": "harmful content",
+            "severity": TestSeverity.UNSAFE,
+            "score": 0.9,
+            "is_safe": False,
+            "issues": ["harmful"],
+        }
     }
     
     result = await node.execute(state)

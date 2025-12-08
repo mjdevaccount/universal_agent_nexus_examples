@@ -19,7 +19,7 @@ from typing import List, Dict, Any, Optional, Callable
 from abc import ABC
 from dataclasses import dataclass, field
 
-from langchain_core.language_model import BaseLanguageModel
+from langchain_core.language_models import BaseLanguageModel
 from langchain_core.tools import Tool
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 
